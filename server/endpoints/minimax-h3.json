@@ -1,0 +1,94 @@
+{
+  "kind": "declarative",
+  "modality": "video",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "MiniMax 视频生成",
+    "docs": "https://platform.minimax.cn/docs/api-reference/video-generation-v2-create",
+    "preferred": "yes",
+    "hints": { "base_url": "https://api.minimax.cn" },
+    "notes": "档位名大小写敏感，enum_maps 负责把界面上的写法翻成接口要的那种。首帧与参考图互斥，一次只发一种；参考图接口收 9 张，5 张以内输入不计费，所以上限写 5。参考音频也与首帧互斥，只在参考图模式下带角色的音色样本。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "inputs": {
+    "first_frame": { "source": "start_image", "encoding": "data_uri" },
+    "refs": { "source": "reference_images", "encoding": "data_uri" },
+    "voices": { "source": "reference_audio_files", "encoding": "data_uri" }
+  },
+  "enum_maps": {
+    "resolution": { "768p": "768P", "2k": "2K" }
+  },
+  "defaults": {
+    "model": "MiniMax-H3",
+    "resolution": "768p",
+    "duration": 5
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v2/video_generation",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "model": "{{ model }}",
+      "content": [
+        { "type": "text", "text": "{{ prompt }}" },
+        {
+          "$when": "inputs.first_frame",
+          "type": "image_url",
+          "image_url": { "url": "{{ inputs.first_frame }}" },
+          "role": "first_frame"
+        },
+        {
+          "$each": {
+            "in": "inputs.refs",
+            "as": "ref",
+            "item": { "type": "image_url", "image_url": { "url": "{{ ref }}" }, "role": "reference_image" }
+          }
+        },
+        {
+          "$each": {
+            "in": "inputs.voices",
+            "as": "voice",
+            "item": { "type": "audio_url", "audio_url": { "url": "{{ voice }}" }, "role": "reference_audio" }
+          }
+        }
+      ],
+      "resolution": "{{ resolution }}",
+      "duration": "{{ duration }}",
+      "ratio": "{{ aspect_ratio }}"
+    },
+    "extract": {
+      "task_id": ["$.task_id"],
+      "error": ["$.error.message", "$.base_resp.status_msg", "$.message"]
+    }
+  },
+  "poll": {
+    "method": "GET",
+    "url": "{{ base_url }}/v2/query/video_generation/{{ task_id }}",
+    "extract": {
+      "status": ["$.task.status"],
+      "video_url": ["$.task.content.url"],
+      "error": ["$.task.error.message", "$.error.message", "$.base_resp.status_msg", "$.message"]
+    }
+  },
+  "status_map": {
+    "queued": "queued",
+    "running": "running",
+    "succeeded": "succeeded",
+    "failed": "failed",
+    "cancelled": "failed"
+  },
+  "capabilities": {
+    "start_image": "yes",
+    "max_reference_images": 9,
+    "max_reference_audios": 3,
+    "max_prompt_chars": 7000,
+    "durations": { "min": 4, "max": 15 },
+    "resolutions": ["768p", "2k"],
+    "aspect_ratios": ["adaptive", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"],
+    "audio": "native",
+    "prompt_style": "h3",
+    "models": ["MiniMax-H3"]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "kind": "declarative",
+  "modality": "image",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "OpenAI Image API",
+    "docs": "https://developers.openai.com/api/docs/guides/image-generation",
+    "preferred": "yes",
+    "hints": { "base_url": "https://api.openai.com" },
+    "notes": "官方的 Image API 有 Generations 与 Edits 两个接口，带不带参考图走的不是同一条路，所以用 submit / submit_alt 各写一条。Edits 的文件字段官方写作 image[]，多张参考图就是同名字段发多次。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "inputs": {
+    "image": { "source": "reference_images", "encoding": "file" }
+  },
+  "defaults": {
+    "model": "gpt-image-2.5-flare",
+    "size": "1024x1024"
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v1/images/generations",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "model": "{{ model }}",
+      "prompt": "{{ prompt }}",
+      "size": "{{ size }}"
+    },
+    "extract": {
+      "b64_json": ["$.data[0].b64_json"],
+      "image_url": ["$.data[0].url"],
+      "error": ["$.error.message", "$.message"]
+    }
+  },
+  "submit_alt": {
+    "when": "inputs.image",
+    "method": "POST",
+    "url": "{{ base_url }}/v1/images/edits",
+    "request": "multipart",
+    "body": {
+      "model": "{{ model }}",
+      "prompt": "{{ prompt }}",
+      "size": "{{ size }}",
+      "image[]": "{{ inputs.image }}"
+    },
+    "extract": {
+      "b64_json": ["$.data[0].b64_json"],
+      "image_url": ["$.data[0].url"],
+      "error": ["$.error.message", "$.message"]
+    }
+  },
+  "capabilities": {
+    "max_reference_images": 4,
+    "max_prompt_chars": 32000,
+    "resolutions": ["1024x1024", "1536x1024", "1024x1536", "1536x864", "864x1536"],
+    "models": ["gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2"]
+  }
+}

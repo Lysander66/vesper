@@ -1,0 +1,44 @@
+{
+  "kind": "declarative",
+  "modality": "text",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "Anthropic API",
+    "docs": "https://platform.claude.com/docs/en/api/messages/create",
+    "preferred": "yes",
+    "hints": { "base_url": "https://api.anthropic.com" }
+  },
+  "auth": {
+    "headers": { "x-api-key": "{{ api_key }}" }
+  },
+  "inputs": {},
+  "defaults": {
+    "model": "claude-opus-5-5",
+    "max_tokens": 32000
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v1/messages",
+    "headers": {
+      "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01"
+    },
+    "body": {
+      "model": "{{ model }}",
+      "system": "{{ system }}",
+      "messages": [{ "role": "user", "content": "{{ prompt }}" }],
+      "max_tokens": "{{ max_tokens }}",
+      "output_config": "{{ output_config }}",
+      "thinking": { "type": "adaptive" },
+      "stream": false
+    },
+    "extract": {
+      "text": ["$.content[0].text", "$.content[*].text"],
+      "error": ["$.error.message"]
+    }
+  },
+  "capabilities": {
+    "max_prompt_chars": 200000,
+    "models": ["claude-opus-5-5", "claude-fable-5-1", "claude-opus-5", "claude-sonnet-5"]
+  }
+}

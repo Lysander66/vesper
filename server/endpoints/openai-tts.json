@@ -1,0 +1,41 @@
+{
+  "kind": "declarative",
+  "modality": "audio",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "OpenAI Audio Speech API",
+    "docs": "https://developers.openai.com/api/docs/guides/text-to-speech",
+    "hints": { "base_url": "https://api.openai.com" },
+    "notes": "响应体就是音频本身，所以 submit 声明 response=binary，没有 poll 也没有 result。只放 gpt-4o-mini-tts 一款：tts-1 系不认 instructions，可用音色也更少，混在一起界面会放行必然报错的组合。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "inputs": {},
+  "defaults": {
+    "model": "gpt-4o-mini-tts",
+    "voice": "marin",
+    "response_format": "mp3"
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v1/audio/speech",
+    "headers": { "Content-Type": "application/json" },
+    "response": "binary",
+    "body": {
+      "model": "{{ model }}",
+      "input": "{{ text }}",
+      "voice": "{{ voice }}",
+      "instructions": "{{ voice_hint }}",
+      "response_format": "{{ response_format }}",
+      "speed": "{{ speed }}"
+    },
+    "extract": {
+      "error": ["$.error.message", "$.message"]
+    }
+  },
+  "capabilities": {
+    "max_prompt_chars": 4096,
+    "models": ["gpt-4o-mini-tts"]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "kind": "declarative",
+  "modality": "image",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "Grok 图像生成",
+    "docs": "https://docs.x.ai/docs/guides/image-generations",
+    "hints": { "base_url": "https://api.x.ai" },
+    "notes": "它不收 size，画幅与档位拆成 aspect_ratio 与 resolution 两个参数。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "defaults": {
+    "model": "grok-imagine-image-2.0",
+    "resolution": "1k"
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v1/images/generations",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "model": "{{ model }}",
+      "prompt": "{{ prompt }}",
+      "aspect_ratio": "{{ aspect_ratio }}",
+      "resolution": "{{ resolution }}"
+    },
+    "extract": {
+      "image_url": ["$.data[0].url"],
+      "error": ["$.error.message", "$.message"]
+    }
+  },
+  "capabilities": {
+    "resolutions": ["1k"],
+    "aspect_ratios": ["16:9", "9:16", "1:1"],
+    "models": ["grok-imagine-image-2.0"]
+  }
+}

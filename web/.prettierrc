@@ -1,0 +1,30 @@
+{
+  "arrowParens": "always",
+  "semi": false,
+  "tabWidth": 2,
+  "printWidth": 200,
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "endOfLine": "lf",
+  "plugins": ["@trivago/prettier-plugin-sort-imports", "prettier-plugin-tailwindcss"],
+  "tailwindStylesheet": "./src/styles/index.css",
+  "importOrder": [
+    "^path$",
+    "^vite$",
+    "^@vitejs/(.*)$",
+    "^react$",
+    "^react-dom/client$",
+    "^globals$",
+    "^@radix-ui/(.*)$",
+    "^@tanstack/react-query$",
+    "^@tanstack/react-router$",
+    "<THIRD_PARTY_MODULES>",
+    "^@/lib/(.*)$",
+    "^@/components/layout/(.*)$",
+    "^@/components/ui/(.*)$",
+    "^@/components/(.*)$",
+    "^[./]"
+  ]
+}

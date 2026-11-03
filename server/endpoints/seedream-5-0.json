@@ -1,0 +1,46 @@
+{
+  "kind": "declarative",
+  "modality": "image",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "Seedream 图像生成",
+    "docs": "https://docs.volcengine.com/docs/ark/image-generation-api",
+    "hints": { "base_url": "https://ark.cn-beijing.volces.com" },
+    "notes": "同步接口，一次请求直接返图，没有任务可轮询。总像素下限高达 368 万，连 1500x1500 都会被拒，所以这里没有小尺寸可选。水印默认是开的，显式关掉。size 发像素而不发档位：档位模式要靠 prompt 里的自然语言描述宽高比，而画幅我们本来就是确定的。产出 URL 只活 24 小时。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "inputs": {
+    "image": { "source": "reference_images", "encoding": "data_uri" }
+  },
+  "defaults": {
+    "model": "doubao-seedream-5-0-260128",
+    "size": "2048x2048",
+    "output_format": "png"
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/api/v3/images/generations",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "model": "{{ model }}",
+      "prompt": "{{ prompt }}",
+      "image": "{{ inputs.image }}",
+      "size": "{{ size }}",
+      "response_format": "url",
+      "output_format": "{{ output_format }}",
+      "watermark": false
+    },
+    "extract": {
+      "image_url": ["$.data[0].url"],
+      "b64_json": ["$.data[0].b64_json"],
+      "error": ["$.error.message", "$.data[0].error.message", "$.message"]
+    }
+  },
+  "capabilities": {
+    "max_reference_images": 14,
+    "resolutions": ["2848x1600", "1600x2848", "2048x2048"],
+    "models": ["doubao-seedream-5-0-260128"]
+  }
+}

@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './theme.css';
+@plugin '@tailwindcss/typography';
+
+/* 只有浅色一套：把 shadcn 组件里残留的 `dark:` 绑到一个永不出现的 class，系统深色模式就不会漏进来。 */
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  html {
+    @apply overflow-x-hidden;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  body {
+    @apply min-h-svh w-full bg-background font-sans text-foreground;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv11', 'ss01', 'tnum';
+  }
+  h1,
+  h2,
+  h3 {
+    @apply tracking-tight;
+  }
+
+  /* Radix 打开弹窗时锁滚动会让吸顶的页头跳位 */
+  body[data-scroll-locked] {
+    overflow: unset !important;
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  @media screen and (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}

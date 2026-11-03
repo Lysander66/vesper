@@ -1,0 +1,61 @@
+{
+  "kind": "declarative",
+  "modality": "video",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "Grok Imagine",
+    "docs": "https://docs.x.ai/developers/model-capabilities/video/image-to-video",
+    "hints": { "base_url": "https://api.x.ai" },
+    "notes": "图生视频不带 aspect_ratio 时视频跟首帧的画幅走，带了会把首帧拉到那个比例。首帧按作品画幅出，这里照发，让视频比例与作品一致。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "inputs": {
+    "first_frame": { "source": "start_image", "encoding": "data_uri" }
+  },
+  "defaults": {
+    "model": "grok-imagine-video-1.5",
+    "resolution": "720p",
+    "duration": 5
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v1/videos/generations",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "model": "{{ model }}",
+      "prompt": "{{ prompt }}",
+      "image": { "url": "{{ inputs.first_frame }}" },
+      "duration": "{{ duration }}",
+      "aspect_ratio": "{{ aspect_ratio }}",
+      "resolution": "{{ resolution }}"
+    },
+    "extract": {
+      "task_id": ["$.request_id"],
+      "error": ["$.error.message", "$.error", "$.message"]
+    }
+  },
+  "poll": {
+    "method": "GET",
+    "url": "{{ base_url }}/v1/videos/{{ task_id }}",
+    "extract": {
+      "status": ["$.status"],
+      "video_url": ["$.video.url"],
+      "error": ["$.error.message"]
+    }
+  },
+  "status_map": {
+    "pending": "running",
+    "done": "succeeded",
+    "failed": "failed",
+    "expired": "failed"
+  },
+  "capabilities": {
+    "start_image": "yes",
+    "durations": { "min": 1, "max": 15 },
+    "resolutions": ["480p", "720p", "1080p"],
+    "aspect_ratios": ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"],
+    "models": ["grok-imagine-video-1.5"]
+  }
+}

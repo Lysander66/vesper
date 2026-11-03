@@ -1,0 +1,40 @@
+{
+  "kind": "declarative",
+  "modality": "text",
+  "schema_version": "1.0.0",
+  "meta": {
+    "title": "OpenAI Responses API",
+    "docs": "https://developers.openai.com/api/docs/guides/text",
+    "hints": { "base_url": "https://api.openai.com" },
+    "notes": "temperature 刻意不给缺省：推理模型收到它一律 400，而这一栏默认就该能跑推理模型；要调的家在绑定参数里显式给。"
+  },
+  "auth": {
+    "headers": { "Authorization": "Bearer {{ api_key }}" }
+  },
+  "inputs": {},
+  "defaults": {
+    "model": "gpt-5.6-sol",
+    "max_output_tokens": 8192
+  },
+  "submit": {
+    "method": "POST",
+    "url": "{{ base_url }}/v1/responses",
+    "headers": { "Content-Type": "application/json" },
+    "body": {
+      "model": "{{ model }}",
+      "instructions": "{{ system }}",
+      "input": "{{ prompt }}",
+      "temperature": "{{ temperature }}",
+      "max_output_tokens": "{{ max_output_tokens }}",
+      "stream": false
+    },
+    "extract": {
+      "text": ["$.output[*].content[*].text"],
+      "error": ["$.error.message", "$.incomplete_details.reason", "$.message"]
+    }
+  },
+  "capabilities": {
+    "max_prompt_chars": 200000,
+    "models": ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]
+  }
+}

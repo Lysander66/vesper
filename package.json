@@ -1,0 +1,23 @@
+{
+  "name": "vesper",
+  "private": true,
+  "author": "Lysander",
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": ["shared", "server", "web"],
+  "trustedDependencies": ["@swc/core", "esbuild"],
+  "scripts": {
+    "dev": "bun run --cwd server dev",
+    "dev:web": "bun run --cwd web dev",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit -p shared && bunx tsc --noEmit -p server && bun run --cwd web typecheck",
+    "lint": "bun run --cwd web lint",
+    "knip": "bun run --cwd web knip",
+    "build": "bun run --cwd web build",
+    "check": "bun run typecheck && bun run lint && bun run knip && bun test && bun run build"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "latest"
+  }
+}

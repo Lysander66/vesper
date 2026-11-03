@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>长庚 · 流水线与提示词</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#fbfcfd; --panel:#ffffff; --panel2:#f4f6f9;
+  --line:#e3e7ee; --line2:#cbd3e0;
+  --fg:#141922; --fg2:#4d5769; --fg3:#7b8699; --pr-fg:#2a3344;
+  --cy:#0d8f80; --cy-soft:rgba(13,143,128,.09); --cy-ring:rgba(13,143,128,.25); --cy-dot:rgba(13,143,128,.5);
+  --am:#b0740c; --am-line:rgba(176,116,12,.4); --am-bg:#fdf6e8;
+  --mdl:#7a4fd0;
+  --m-fg:#5b36a8; --m-bg:rgba(122,79,208,.11); --m-bg2:rgba(122,79,208,.2);
+  --h-fg:#8a5a08; --h-bg:rgba(245,158,11,.17);
+  --img-bg:rgba(13,143,128,.08); --img-line:rgba(13,143,128,.35); --img-key:rgba(13,143,128,.14);
+  --vid-bg:rgba(47,111,223,.08); --vid-line:rgba(47,111,223,.35); --vid-key:rgba(47,111,223,.14);
+  --aud-bg:rgba(208,69,122,.07); --aud-line:rgba(208,69,122,.35); --aud-key:rgba(208,69,122,.12);
+  --gate-key:rgba(245,158,11,.14);
+  --nav-bg:rgba(251,252,253,.86);
+  --glow1:rgba(13,143,128,.07); --glow2:rgba(122,79,208,.05);
+  --shadow:0 1px 2px rgba(22,32,54,.05),0 4px 14px rgba(22,32,54,.045);
+  --mono:ui-monospace,"SF Mono",Menlo,"Cascadia Code","JetBrains Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0f1319; --panel:#161b23; --panel2:#1d232d;
+    --line:#262e3a; --line2:#36404f;
+    --fg:#e6eaf0; --fg2:#a9b2c1; --fg3:#7d8798; --pr-fg:#cfd6e1;
+    --cy:#3cc4b2; --cy-soft:rgba(60,196,178,.12); --cy-ring:rgba(60,196,178,.35); --cy-dot:rgba(60,196,178,.55);
+    --am:#e2a640; --am-line:rgba(226,166,64,.45); --am-bg:#2a2214;
+    --mdl:#a685f0;
+    --m-fg:#c3a8ff; --m-bg:rgba(166,133,240,.16); --m-bg2:rgba(166,133,240,.28);
+    --h-fg:#f0bd5e; --h-bg:rgba(245,158,11,.16);
+    --img-bg:rgba(60,196,178,.09); --img-line:rgba(60,196,178,.38); --img-key:rgba(60,196,178,.18);
+    --vid-bg:rgba(90,145,240,.1); --vid-line:rgba(90,145,240,.4); --vid-key:rgba(90,145,240,.18);
+    --aud-bg:rgba(228,98,148,.09); --aud-line:rgba(228,98,148,.4); --aud-key:rgba(228,98,148,.16);
+    --gate-key:rgba(245,158,11,.18);
+    --nav-bg:rgba(15,19,25,.88);
+    --glow1:rgba(60,196,178,.06); --glow2:rgba(166,133,240,.05);
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.22);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);
+  font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,var(--glow1),transparent),
+                   radial-gradient(ellipse 60% 40% at 92% 14%,var(--glow2),transparent);
+  background-attachment:fixed}
+
+nav{position:fixed;left:0;top:0;bottom:0;width:216px;padding:26px 0 26px 24px;
+  overflow-y:auto;border-right:1px solid var(--line);background:var(--nav-bg);
+  backdrop-filter:blur(14px);z-index:50}
+nav .brand{font-size:13px;font-weight:700;letter-spacing:.22em;color:var(--cy);margin-bottom:4px}
+nav .sub{font-size:11px;color:var(--fg3);margin-bottom:22px;letter-spacing:.04em}
+nav a{display:block;padding:5px 14px 5px 12px;color:var(--fg2);text-decoration:none;
+  font-size:12.5px;border-left:2px solid transparent;transition:.18s;line-height:1.5}
+nav a.sub2{padding-left:24px;font-size:12px}
+nav a:hover{color:var(--fg)}
+nav a.on{color:var(--cy);font-weight:600;border-left-color:var(--cy);
+  background:linear-gradient(90deg,var(--cy-soft),transparent)}
+nav .grp{font-size:10px;color:var(--fg3);opacity:.7;letter-spacing:.16em;margin:16px 0 5px 12px}
+
+main{margin-left:216px;padding:0 44px 140px}
+.wrap{max-width:960px;margin:0 auto}
+section{padding:72px 0 0;scroll-margin-top:24px}
+h3[id]{scroll-margin-top:24px}
+.eyebrow{font-family:var(--mono);font-size:11px;color:var(--cy);letter-spacing:.2em;
+  margin-bottom:10px;display:flex;align-items:center;gap:9px}
+.eyebrow::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,var(--line2),transparent)}
+h1{font-size:40px;line-height:1.2;letter-spacing:-.02em;font-weight:800}
+h2{font-size:24px;line-height:1.3;letter-spacing:-.015em;margin-bottom:8px;font-weight:750;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 code{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--fg3)}
+h3{font-size:14.5px;margin:22px 0 8px;font-weight:700}
+p{color:var(--fg2);margin-bottom:10px}
+.lead{font-size:15.5px;max-width:740px;margin-top:14px}
+b{color:var(--fg);font-weight:650}
+.hero{padding:88px 0 0}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,var(--cy),var(--mdl));-webkit-background-clip:text;background-clip:text;color:transparent}
+code{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12.5px;color:var(--cy);overflow-wrap:anywhere}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:6px 0 12px;color:var(--fg);overflow-x:auto}
+ul.plain{margin:6px 0 12px 20px;color:var(--fg2);font-size:14px}
+ul.plain li{margin-bottom:4px}
+
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+th{text-align:left;padding:8px 12px;color:var(--fg3);font-weight:600;font-size:11.5px;letter-spacing:.1em;border-bottom:1px solid var(--line2)}
+td{padding:8px 12px;border-bottom:1px solid var(--line);color:var(--fg2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{white-space:nowrap;color:var(--fg);font-weight:600}
+td a,.aside a,p a,li a{color:var(--cy);text-decoration:none;border-bottom:1px dotted var(--cy-dot)}
+td a:hover,.aside a:hover,p a:hover,li a:hover{border-bottom-style:solid}
+
+/* 工作流图：1–9 排成 3×3 对齐，导入与合成缩成窄列挂在首尾 */
+.flow{display:grid;grid-template-columns:84px 40px 1fr 64px 1fr 64px 1fr 40px 84px;align-items:stretch;grid-auto-rows:1fr;row-gap:26px;margin:34px 0 10px}
+.node{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);background:var(--panel);border-radius:10px;
+  padding:9px 12px 8px;box-shadow:var(--shadow);transition:.15s;min-width:0}
+a.node:hover{box-shadow:0 0 0 2px var(--cy-ring),var(--shadow)}
+.node .n{font-family:var(--mono);font-size:10.5px;color:var(--fg3)}
+.node .t{font-size:14.5px;font-weight:650;line-height:1.35}
+.node .k{font-size:11.5px;color:var(--fg3);line-height:1.5;margin-top:2px;white-space:nowrap}
+.node.img{background:var(--img-bg);border-color:var(--img-line)}
+.node.vid{background:var(--vid-bg);border-color:var(--vid-line)}
+.node.aud{background:var(--aud-bg);border-color:var(--aud-line)}
+.node.off{background:transparent;border-style:dashed;box-shadow:none;padding:9px 10px 8px}
+.flow .gate{display:flex;align-items:center;justify-content:flex-end}
+.flow .g{font-size:10.5px;color:var(--am);font-weight:600;white-space:nowrap;border:1px solid var(--am-line);background:var(--am-bg);border-radius:999px;padding:0 7px;line-height:1.6}
+.arr{position:relative;display:flex;align-items:center;justify-content:center;color:var(--fg3);font-size:15px}
+.arr .g{position:absolute;bottom:calc(50% + 12px);left:50%;transform:translateX(-50%);z-index:1}
+.arr.narrow{visibility:hidden}
+.key{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--fg3);margin:8px 0 0}
+.key i{display:inline-block;width:14px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:6px;border:1px solid var(--line2);background:var(--panel)}
+.key i.img{background:var(--img-key);border-color:var(--img-line)}
+.key i.vid{background:var(--vid-key);border-color:var(--vid-line)}
+.key i.aud{background:var(--aud-key);border-color:var(--aud-line)}
+.key i.off{border-style:dashed;background:transparent}
+.key i.g{background:var(--gate-key);border-color:var(--am-line);border-radius:999px}
+
+/* 提示词块 */
+.struct{font-size:13.5px;color:var(--fg2);margin:4px 0 12px}
+.struct b{font-weight:600;color:var(--fg3);margin-right:6px}
+.pr{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 20px;margin:10px 0 14px;font-size:13.5px;line-height:1.8;color:var(--pr-fg)}
+.pr > div{display:flex;gap:16px;justify-content:space-between;padding:1px 0}
+.pr > div > span:first-child{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;flex:1;min-width:0}
+.pr .c{flex:none;font-size:11px;color:var(--fg3);white-space:nowrap;padding-top:3px}
+.pr .sys{color:var(--fg3);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px}
+.pr .gap{height:8px}
+.f{font-weight:600;color:var(--fg)}
+.m{font-weight:600;color:var(--m-fg);background:var(--m-bg);border-radius:4px;padding:0 5px;text-decoration:none}
+a.m:hover{background:var(--m-bg2)}
+.h{font-weight:600;color:var(--h-fg);background:var(--h-bg);border-radius:4px;padding:0 5px}
+.cond{color:var(--fg3);font-size:12px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--fg2);margin:12px 0}
+.out td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--m-fg);font-weight:500}
+.aside{font-size:13.5px}
+
+/* 窄屏：导航改为顶部横条，正文去左边距，工作流图纵排，表格在自身容器内横向滚动 */
+@media (max-width:860px){
+  nav{position:sticky;top:0;bottom:auto;width:auto;display:flex;align-items:center;gap:2px;
+    padding:8px 16px;overflow-x:auto;overflow-y:hidden;border-right:none;border-bottom:1px solid var(--line);white-space:nowrap}
+  nav .brand{margin:0 10px 0 0;flex:none}
+  nav .sub,nav .grp{display:none}
+  nav a,nav a.sub2{flex:none;padding:4px 10px;border-left:none;border-bottom:2px solid transparent;font-size:12.5px}
+  nav a.on{border-bottom-color:var(--cy);background:none}
+  main{margin-left:0;padding:0 16px 96px}
+  section{padding-top:48px;scroll-margin-top:56px}
+  h3[id]{scroll-margin-top:56px}
+  .hero{padding-top:40px}
+  h1{font-size:30px}
+  h2{font-size:21px}
+  .flow{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin:24px 0 10px}
+  .flow > div:empty{display:none}
+  .flow .gate{justify-content:center}
+  .arr,.arr.narrow{visibility:visible;font-size:0;flex-direction:column;gap:4px;padding:2px 0}
+  .arr::after{content:"↓";font-size:15px;line-height:1}
+  .arr .g{position:static;transform:none}
+  .node .k{white-space:normal}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  td:first-child{white-space:normal;min-width:6em}
+  .pr{padding:12px 14px}
+  .pr > div{flex-direction:column;gap:0}
+  .pr .c{white-space:normal;padding:0 0 4px}
+}
+</style>
+</head>
+<body>
+
+<nav aria-label="目录">
+  <div class="brand">长庚 VESPER</div>
+  <div class="sub">流水线与提示词</div>
+  <a href="#flow">工作流</a>
+  <a href="#read">阅读说明</a>
+  <a href="#edit">怎么改提示词</a>
+  <div class="grp">步骤</div>
+  <a href="#episode">1 分集</a>
+  <a href="#assets">2 提取资产</a>
+  <a href="#look">3 设定图</a>
+  <a href="#beats">4 写节拍</a>
+  <a href="#shots">5 拆分镜</a>
+  <a href="#review">审查</a>
+  <a href="#draft">6 逐镜精写</a>
+  <a href="#frame">7 首帧</a>
+  <a href="#clip">8 视频</a>
+  <a class="sub2" href="#h3">MiniMax H3</a>
+  <a href="#voice">9 配音</a>
+  <div class="grp">附录</div>
+  <a href="#suggest">建议集数</a>
+  <a href="#style">推荐画风</a>
+  <a href="#stale">产物过时规则</a>
+  <a href="#refs">参考资料</a>
+</nav>
+
+<main><div class="wrap">
+
+<section class="hero">
+  <div class="eyebrow">PIPELINE · PROMPTS</div>
+  <h1>流水线与<em>提示词</em></h1>
+  <p class="lead">长庚 Vesper 把小说原文做成短剧。输入是一份 txt 原文（可追加多份），产出是每集一条合成版视频。流程依次为：原文 → 分集 → 资产 → 节拍 → 分镜 → 首帧 / 视频 / 配音 → 合成。</p>
+  <p class="lead">分集、提取资产、写节拍、拆分镜、逐镜精写与审查调用文本模型；设定图与首帧调用图像模型；视频调用视频模型，可同时生成声音；选择单独配音时，台词交给配音模型；合成在本机用 ffmpeg 完成，不调用模型。</p>
+  <p class="lead">全程在三处停下等人确认：分集定稿、资产锁定、节拍确认。此后的首帧、视频与配音可以逐镜发起、看过一镜再做下一镜，也可以整集按镜序依次生成。</p>
+  <p class="lead">本页上半部分是工作流，下半部分逐节列出每一步发给模型的提示词全文。</p>
+</section>
+
+<!-- 工作流 -->
+<section id="flow">
+  <div class="eyebrow">01 · WORKFLOW</div>
+  <h2>工作流</h2>
+
+  <div class="flow">
+    <div class="node off"><div class="n">0</div><div class="t">导入</div><div class="k">人工</div></div>
+    <div class="arr">→</div>
+    <a class="node" href="#episode"><div class="n">1</div><div class="t">分集</div><div class="k">可选</div></a>
+    <div class="arr"><span class="g">分集定稿</span>→</div>
+    <a class="node" href="#assets"><div class="n">2</div><div class="t">提取资产</div><div class="k">&nbsp;</div></a>
+    <div class="arr">→</div>
+    <a class="node img" href="#look"><div class="n">3</div><div class="t">设定图</div><div class="k">每张一次</div></a>
+    <div></div><div></div>
+
+    <div class="gate"><span class="g">资产锁定</span></div>
+    <div class="arr">→</div>
+    <a class="node" href="#beats"><div class="n">4</div><div class="t">写节拍</div><div class="k">＋ 审查</div></a>
+    <div class="arr"><span class="g">节拍确认</span>→</div>
+    <a class="node" href="#shots"><div class="n">5</div><div class="t">拆分镜</div><div class="k">＋ 审查</div></a>
+    <div class="arr">→</div>
+    <a class="node" href="#draft"><div class="n">6</div><div class="t">逐镜精写</div><div class="k">生成时按需</div></a>
+    <div></div><div></div>
+
+    <div></div><div class="arr narrow" aria-hidden="true">→</div>
+    <a class="node img" href="#frame"><div class="n">7</div><div class="t">首帧</div><div class="k">每镜一次</div></a>
+    <div class="arr">→</div>
+    <a class="node vid" href="#clip"><div class="n">8</div><div class="t">视频</div><div class="k">每镜一次</div></a>
+    <div class="arr">→</div>
+    <a class="node aud" href="#voice"><div class="n">9</div><div class="t">配音</div><div class="k">每镜一次</div></a>
+    <div class="arr">→</div>
+    <div class="node off"><div class="n">10</div><div class="t">合成</div><div class="k">ffmpeg</div></div>
+  </div>
+  <div class="key">
+    <span><i></i>文本模型</span>
+    <span><i class="img"></i>图像模型</span>
+    <span><i class="vid"></i>视频模型</span>
+    <span><i class="aud"></i>配音模型</span>
+    <span><i class="off"></i>不调用模型</span>
+    <span><i class="g"></i>人工确认</span>
+  </div>
+
+  <table style="margin-top:22px">
+    <tr><th>步骤</th><th>说明</th></tr>
+    <tr><td>0 导入</td><td>上传原文，设定作品名、画幅、画风、单集目标时长、音轨、单镜时长、末帧参考</td></tr>
+    <tr><td>1 分集</td><td>填了集数时，把一份原文切成若干集，产出每集标题、概要与末句，由代码按末句定位切分点。不填集数时，一份原文就是一集</td></tr>
+    <tr><td>2 提取资产</td><td>从原文提取角色、场景、道具，写出外貌、着装、音色、空间、外观等文字描述</td></tr>
+    <tr><td>3 设定图</td><td>按资产描述出图：角色先出全身，再以全身为参考出半身特写、三视图、表情集、服装细节；场景出场景空镜，道具出道具单品</td></tr>
+    <tr><td>4 写节拍</td><td>把一集原文改编为节拍序列，区分展开演与旁白带过，台词在这一步定稿</td></tr>
+    <tr><td>5 拆分镜</td><td>把节拍拆为镜头表：景别、机位、运镜、情绪、衔接、台词分配、引用的资产</td></tr>
+    <tr><td>审查</td><td>第 4、5 步完成后各自动执行一次，也可手动发起：模型以没读过原著的观众视角复述剧情，列出看不懂、接不上的地方。只出报告，不改内容</td></tr>
+    <tr><td>6 逐镜精写</td><td>为一镜写成品提示词：首帧画面 <code>image_prompt</code>、运动过程 <code>motion_prompt</code>、声音 <code>sound</code> 与每句台词的念法。生成某一镜的首帧或视频时，这一镜还没有提示词就先写；也可以单镜重写</td></tr>
+    <tr><td>7 首帧</td><td>以 <code>image_prompt</code> 与参考图生成首帧。画面来源为「参考图」的镜头跳过</td></tr>
+    <tr><td>8 视频</td><td>以首帧（或参考图）与 <code>motion_prompt</code> 生成视频</td></tr>
+    <tr><td>9 配音</td><td>仅单独配音时执行：台词原文送配音模型。视频自带声音时由视频模型同时出声</td></tr>
+    <tr><td>10 合成</td><td>按镜序拼接视频，单独配音时叠加配音，产出这一集的合成版。画面按画幅等比放大铺满，居中裁去多出的边；片头、片尾与衔接为黑场（<code>join</code> 为 <code>fade</code>）的接缝淡入淡出；各镜响度过高的压低，有台词而过低的抬高</td></tr>
+  </table>
+</section>
+
+<!-- 阅读说明 -->
+<section id="read">
+  <div class="eyebrow">02 · NOTATION</div>
+  <h2>阅读说明</h2>
+  <p>每节先给一行结构，再给组装后的全文。全文按实际发送顺序排列，各行以换行连接；<code>**</code> 与反引号原样发送。</p>
+  <div class="legend">
+    <span><span class="f">{原文}</span>　代码从库中读取</span>
+    <span><a class="m" href="#beats">{summary}</a>　上游模型产出，点击跳到产出它的步骤</span>
+    <span><span class="h">{其他}</span>　人工填写</span>
+    <span><span class="cond">右侧灰字</span>　出现条件，不满足时整行省略</span>
+  </div>
+  <table>
+    <tr><td>输出格式</td><td>文本模板在额外要求之前各有一段「输出 JSON：」示例，字段即各节「产出」表，下文不再列出</td></tr>
+    <tr><td>模型产出可改</td><td>紫色字段生成后都能人工修改，下游读取的是修改后的值</td></tr>
+    <tr><td>额外要求</td><td>每个模板都有一个「其他」输入框，填写的内容作为「额外要求」写在规则之后，与上面的规则冲突时以它为准</td></tr>
+  </table>
+</section>
+
+<!-- 怎么改提示词 -->
+<section id="edit">
+  <div class="eyebrow">03 · EDITING</div>
+  <h2>怎么改提示词</h2>
+  <p>提示词全部写在 <code>server/src/pipeline/prompts.ts</code>，其中的字符串逐字发给模型。下文每节标题旁的函数名就是该文件中的导出函数；只想对单次生成补一句要求时，填「其他」即可，不必改代码。</p>
+  <p><b>打出全文。</b>下面的命令用固定样例渲染全部模板，不连接数据库，每行前面是字数；末尾加模板 id 只打一份，id 写错会列出全部可选值。改前改后各存一份，用 <code>diff</code> 对比。</p>
+  <pre>bun run server/src/tools/dump-prompts.ts
+bun run server/src/tools/dump-prompts.ts shot_prompt</pre>
+  <p><b>检查。</b>改完运行下面的命令，依次执行类型检查、lint、knip、测试与构建；提示词的断言在 <code>server/test/prompts.test.ts</code> 与 <code>server/test/preview.test.ts</code>。</p>
+  <pre>bun run check</pre>
+  <p><b>不能动的格式约定</b></p>
+  <ul class="plain">
+    <li><b>「输出 JSON：」示例。</b>回复按 zod schema 解析，写节拍与审查还随请求发送同构的 JSON Schema；改字段要同时改解析代码。</li>
+    <li><b><code>ends_with</code> 逐字抄写。</b>代码靠它在原文中定位分集切点与每拍对应的原文段。</li>
+    <li><b>资产描述原样写入。</b>设定图、参考图说明里的资产描述取自锁定版，逐字写入，不改写；改写一次相当于换了一个对象。</li>
+    <li><b>参考图说明的顺序与实际发送的参考图一致。</b>说「@图片3 是某某」而第 3 张是别人，比少挂一张更糟。</li>
+    <li><b>参考图说明里每张图的用途。</b>删掉后模型会照搬设定图的构图取景。</li>
+    <li><b>画幅不写进提示词。</b>画幅只通过请求参数传给模型。</li>
+  </ul>
+</section>
+
+<!-- 分集 -->
+<section id="episode">
+  <div class="eyebrow">STEP 1 · TEXT</div>
+  <h2>分集 <code>episodePrompt</code></h2>
+  <p>只在填了集数时执行，一次切一份原文。代码按每集的 <code>ends_with</code> 在原文中定位切分点；有定位不上的，把失败原因附在提示词里重问，最多共问 3 次，仍失败就报错。只切出一集时，集名沿用导入时的标题（正文首行的章节标题，没有则取文件名）。</p>
+  <p class="struct"><b>结构</b>任务 + 集数 + 目标时长 + 切分要求 + 重试说明 + 额外要求 + 原文</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是短剧编剧，负责把长篇原文切成若干集。只输出 JSON，不要解释，不要围栏之外的任何文字。</span></div>
+    <div><span>把下面的原文切成若干集短剧。</span></div>
+    <div><span>切成恰好 <span class="h">{集数}</span> 集，这是人工指定的。在剧情转折处切开，尽量让每集有头有尾。</span></div>
+    <div><span>成片每集约 <span class="h">{单集目标时长}</span> 秒，这是改编后的长度，和把原文念一遍要多久无关。</span><span class="c">设定了目标时长</span></div>
+    <div><span>切分要求：
+- 每集在情节转折或悬念处收尾，不要切在一句话中间
+- 按原文顺序切，不要跳过、重排或改写任何段落
+- `ends_with` 必须从原文中**逐字抄写**该集最后一句（含标点，15–40 字），不能改写或省略
+- 尤其不要把人名换成代词，也不要合并或删减句中的任何字</span></div>
+    <div><span>上一轮的 ends_with 没能在原文里定位，逐条修正后重新输出：
+- <span class="f">{定位失败的末句与原因}</span></span><span class="c">重试时</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准，输出格式照旧）：
+<span class="h">{其他}</span></span></div>
+    <div><span>原文：
+<span class="f">{原文全文}</span></span></div>
+  </div>
+  <table class="out">
+    <tr><th>产出</th><th>用于</th></tr>
+    <tr><td>title</td><td><a href="#beats">写节拍</a> 首行、<a href="#review">审查</a>、<a href="#draft">逐镜精写</a>「本集」</td></tr>
+    <tr><td>synopsis</td><td>写节拍「本集要讲的是」、逐镜精写「本集」</td></tr>
+    <tr><td>ends_with</td><td>代码定位切分点，不进入其他提示词</td></tr>
+  </table>
+</section>
+
+<!-- 提取资产 -->
+<section id="assets">
+  <div class="eyebrow">STEP 2 · TEXT</div>
+  <h2>提取资产 <code>assetsPrompt</code></h2>
+  <p>这里写的描述是后面所有画图的文字依据。节拍确认后可以再提取一次，补上会开口的角色；已有的同名资产不动，只新增。</p>
+  <p class="struct"><b>结构</b>任务 + 提取标准 + 角色 / 场景 / 道具细则 + 人工指定 + 已提取名单 + 字段说明 + 额外要求 + 原文</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是美术指导，从原文中挑出需要固定形象、会在多个镜头里反复出现的人物、场景与道具。只输出 JSON，不要解释。</span></div>
+    <div><span>从下面的原文中挑出**需要固定形象**的<span class="h">{提取类别}</span>。</span><span class="c">未选时为全部三类</span></div>
+    <div><span>怎么判断要不要提取：这个名字指的是一个固定的具体对象，**会真的出现在画面里**，能画成一张设定图，在后面的镜头里反复使用。
+要不要提取，看它在剧情里起不起作用，不看出现几次：戏份少但推动剧情的要提取，出现多但与剧情无关的不用提取。
+每多一样，后续每一镜就多一张要管的参考图，也多一笔生成费用，不要凑数。</span></div>
+    <div class="gap"></div>
+    <div><span>## 人物（characters）
+- 要提取：主角，以及画面里要认出脸的配角；推动剧情、反复出场的怪兽、机甲、灵兽这类非人形角色也算
+- 不用提取：无名路人、群像（「围观群众」「学生们」）、泛指（「敌人」「守卫」）、只当背景的载具
+- tier：lead 为主角与核心对手，support 为其余要认出脸的
+- 提取几个由剧情定。没提取的人物照样可以说台词，只是长相不会前后统一</span><span class="c">选了角色</span></div>
+    <div><span>已定稿的改编剧本里，这些名字会开口说话：<a class="m" href="#beats">{已确认节拍中的说话人}</a>。
+其中指具体某个人的**都要提取**，哪怕原文里只出现一两次，因为他们会真的出现在画面上。
+泛指与群像（如「某某队员」「众人」）仍然不用提取。</span><span class="c">节拍已确认</span></div>
+    <div><span>## 场景（scenes）
+- 要提取：剧情会反复回到、观众需要认出「又回到了这个地方」的固定空间
+- 不用提取：只路过一次的地方、泛指的环境（「走廊」「街上」）、纯天空纯海面这类无结构的背景
+- **一个场景只装一个镜头拍得下的连续空间**。通道、厅堂、台阶、殿内要分成四个场景；
+  合成一个「金字塔内部」来写，画出来会是上下两半拼起来的图
+- 提取几处由剧情定。没提取的地方照样能拍，按那一镜的环境描述现画</span><span class="c">选了场景</span></div>
+    <div><span>## 道具（props）
+- 要提取：推动剧情、并且在多个镜头里出现的关键物件，比如主角的武器、贯穿全篇的信物、关键装置
+- 不用提取：一次性的消耗品、背景陈设、泛指的器物（「枪」「杯子」）
+- 提取几件由剧情定，拿不准就不提取</span><span class="c">选了道具</span></div>
+    <div class="gap"></div>
+    <div><span>## 人工指定（和上面的规则冲突时，以这里为准）
+- 一定要提取：<span class="h">{包含}</span>。出现次数再少也要提取，放进它所属的那一类
+- 不要提取：<span class="h">{排除}</span>。出现次数再多也不提取，三类里都不要出现</span><span class="c">填写了包含或排除</span></div>
+    <div><span>## 已经提取过的（换个叫法也算同一个，不要再输出）
+<span class="f">{作品内已有资产名}</span></span><span class="c">作品已有资产</span></div>
+    <div class="gap"></div>
+    <div><span>## 字段
+外观类的描述都要过图像模型的内容审核：血迹、伤口、尸骸、利器刺入人体这类字眼会让这张设定图直接被拒。同样的东西改用形制、材质、颜色、磨损、光泽来写。</span></div>
+    <div><span>人物：
+- name：正式称呼，取原文中最常用的那个；aliases：原文中出现过的其他称呼
+- tier：lead 或 support
+- form：human 为人形，creature 为怪兽、机甲这类非人形
+- identity：身份与人物关系，一两句
+- traits：**外貌辨识特征**，只写画得出来的东西（年龄段、发型发色、眼睛、体型、显著特征）。不要写性格
+- 非人形的 traits 写清体态（几足、站姿、尺度）和脸：眼睛、口部与头部轮廓，outfit 留空
+- 性别、年龄这类原文写明的，照原文写，traits 和 voice 都不能跟它矛盾；原文没写的才自己补
+- outfit：默认着装，写清款式与颜色。只写穿戴在身上的衣物与配饰，
+  手里拿的武器和随身物件不写，它们归到道具里；两处各写一遍，会画成两件不同的东西
+- outfit 只写一身：剧中换了一身明显不同的衣服（便服换官服、常服换嫁衣），出场最多的那身写进 outfit，
+  其余每身写进 costumes：name 是这身装扮的叫法（「官服」），outfit 照上面的写法。只是加件外衣、摘了帽子不算换装
+- voice：音色描述，如「少年音，清亮，语速偏快」
+- appearances：在原文中出现的大致次数</span><span class="c">选了角色</span></div>
+    <div><span>场景：
+- name：这个地方的称呼；aliases：其他叫法
+- description：空间本身——结构、材质、陈设、尺度。只写画得出来的，
+  且只写**这一处**：出现「…与…交替」「深处还有…」就说明该拆成两个场景
+- lighting：默认的光线与时段，如「冷白顶光，全息投影的蓝光，无自然光」
+- appearances：在原文中出现的大致次数</span><span class="c">选了场景</span></div>
+    <div><span>道具：
+- name：按物件看上去是什么来叫；只在剧情里才有的叫法写进 aliases
+- description：外观——形制、材质、颜色、尺寸感、显著细节
+- holder：归谁所有或谁在用；没有明确归属就留空
+- appearances：在原文中出现的大致次数</span><span class="c">选了道具</span></div>
+    <div><span>这次只提取<span class="h">{提取类别}</span>，其余类别给空数组，哪怕原文里确实有。</span><span class="c">只选了部分类别</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准，输出格式照旧）：
+<span class="h">{其他}</span></span></div>
+    <div><span>原文：
+<span class="f">{所选原文}</span></span><span class="c">多份时每份前加【文件名】</span></div>
+  </div>
+  <table class="out">
+    <tr><th>产出</th><th>用于</th></tr>
+    <tr><td>角色 traits</td><td><a href="#look">设定图</a>「外貌：」、<a href="#frame">首帧</a> 参考图说明、<a href="#draft">逐镜精写</a>「出场人物」</td></tr>
+    <tr><td>角色 outfit</td><td>设定图「着装：」；这个角色有换装时，<a href="#shots">拆分镜</a> 角色清单里的「着装：」</td></tr>
+    <tr><td>角色 costumes</td><td>每身建一件换装资产，名为「角色名·装扮名」。它所属的原角色在界面上称「本体」，换装的外貌、身份与音色在锁定时取自本体</td></tr>
+    <tr><td>角色 identity</td><td><a href="#shots">拆分镜</a> 角色清单、逐镜精写「出场人物」</td></tr>
+    <tr><td>角色 voice</td><td><a href="#clip">视频</a> 台词前的音色括号（视频自带声音）、<a href="#voice">配音</a> voice_hint（单独配音）</td></tr>
+    <tr><td>场景 description · lighting</td><td>设定图、首帧参考图说明、逐镜精写「场景设定」</td></tr>
+    <tr><td>道具 description</td><td>设定图、首帧参考图说明、逐镜精写「画面里的道具」</td></tr>
+  </table>
+</section>
+
+<!-- 设定图 -->
+<section id="look">
+  <div class="eyebrow">STEP 3 · IMAGE</div>
+  <h2>设定图 <code>lookPrompt</code></h2>
+  <p>资产描述原样写入，不改写。每件资产先出第一张（角色为全身），看过再补其余；角色的其余各张以全身为参考图，所以按顺序逐张生成。</p>
+  <p class="struct"><b>结构</b>画风 + 取景 + 对象 + 资产描述 + 参考图说明 + 收尾 + 额外要求</p>
+  <div class="pr">
+    <div><span><span class="h">{作品画风}</span></span></div>
+    <div><span><span class="f">{取景句}</span></span><span class="c">按图的类型取下表一句</span></div>
+    <div><span>对象：<span class="f">{资产名}</span></span><span class="c">换装资产写本体的名字</span></div>
+    <div><span>外貌：<a class="m" href="#assets">{traits}</a>
+着装：<span class="m">{outfit}</span></span><span class="c">角色；非人形或着装为空时不写「着装」一行</span></div>
+    <div><span>环境：<span class="m">{description}</span>
+光线：<span class="m">{lighting}</span></span><span class="c">场景</span></div>
+    <div><span>外观：<span class="m">{description}</span>
+归属：<span class="m">{holder}</span></span><span class="c">道具；归属为空时省略</span></div>
+    <div><span>参考图是这个人物的全身设定图：五官、发型、服装配色与身材比例保持不变，只按上面的取景重画。</span><span class="c">角色的半身特写、表情集、三视图</span></div>
+    <div><span>参考图是这个人物的全身设定图：只取其中的着装，款式、配色与配件保持不变，按上面的取景平铺重画。</span><span class="c">角色的服装细节</span></div>
+    <div><span>参考图是这个人物穿另一身衣服的全身设定图：五官、发型与身材比例保持不变，着装换成上面写的这一身。</span><span class="c">换装资产的全身，参考图是本体的全身；外貌取自本体</span></div>
+    <div><span>画面内不要出现任何文字、水印、边框或多余人物。
+用形制、材质与光影表现这个对象，画面干净克制。</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准）：
+<span class="h">{其他}</span></span></div>
+  </div>
+  <table>
+    <tr><th>类型</th><th>取景句</th></tr>
+    <tr><td>全身</td><td>单人全身立绘，A-pose 站姿，正面，纯灰色背景，中性平光，无戏剧光影与投影，完整露出鞋子与发梢</td></tr>
+    <tr><td>半身特写</td><td>胸部以上特写，正面，中性表情，纯灰色背景，中性平光，无戏剧光影</td></tr>
+    <tr><td>表情集</td><td>同一人物的九格表情集，3×3 网格排列，纯灰色背景，中性平光，每格胸像（喜、怒、惊、悲、冷静、微笑、疑惑、痛苦、坚决）</td></tr>
+    <tr><td>三视图</td><td>同一人物的三视图，从左到右依次为正面、侧面、背面全身，A-pose，纯灰色背景，中性平光，三者等高对齐</td></tr>
+    <tr><td>服装细节</td><td>服装细节图，平铺展示该人物的默认着装，主要配件逐件摆开，无人物，纯灰色背景，中性平光</td></tr>
+    <tr><td>场景空镜</td><td>场景空镜，固定机位广角建立镜头，画面内不要出现任何人物或生物；分出前景、中景、后景三层，交代出入口的位置、地面与墙面的材质、主要陈设各自的固定相对位置，空间结构连续可复用</td></tr>
+    <tr><td>道具单品</td><td>单件物品的产品图，物件居中占满画面，纯灰色背景，均匀柔光，无人物无手持</td></tr>
+  </table>
+  <p>非人形角色（form 为 creature）只有全身、半身特写、三视图三张，取景另用一套，不写「着装」一行；后两张的参考图说明为「参考图是这个生物的设定图：头部结构、眼睛、体表与配色保持不变，只按上面的取景重画。」</p>
+  <table>
+    <tr><th>类型</th><th>非人形取景句</th></tr>
+    <tr><td>全身</td><td>生物设定图，三分之四侧面，按它自己的体态与重心摆出自然姿势，整只完整入画，纯灰色背景，中性平光，无戏剧光影与投影</td></tr>
+    <tr><td>半身特写</td><td>头部特写，三分之四侧面，眼睛、口部与头部结构清楚，纯灰色背景，中性平光</td></tr>
+    <tr><td>三视图</td><td>同一生物的三视图，从左到右依次为正面、侧面、背面，按它自己的体态摆放，纯灰色背景，中性平光，三者等高对齐</td></tr>
+  </table>
+</section>
+
+<!-- 节拍 -->
+<section id="beats">
+  <div class="eyebrow">STEP 4 · TEXT</div>
+  <h2>写节拍 <code>beatsPrompt</code></h2>
+  <p>全流程中主要的人工改写环节。台词在这一步定稿，后面各步只按编号引用。代码按每拍的 <code>ends_with</code> 定位原文；最后一拍只改编到原文 80% 以前时，视为回复中途停止，重写一次，仍不足则记一条警告。</p>
+  <p class="struct"><b>结构</b>任务 + 概要 + 目标时长 + 节拍类型 + 改编边界 + 可理解性 + 讲法 + 详略 + 人工指定 + 台词要求 + 原文定位 + 额外要求 + 原文</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是短剧编剧，把小说章节改编成短剧的叙事节拍。改编短剧本来就要删减原文。只输出 JSON，不要解释。</span></div>
+    <div><span>把下面的原文改编成一集短剧的叙事节拍，本集标题《<a class="m" href="#episode">{title}</a>》。</span></div>
+    <div><span>本集要讲的是：<span class="m">{synopsis}</span></span><span class="c">有概要</span></div>
+    <div><span>成片目标约 <span class="h">{单集目标时长}</span> 秒，按这个长度取舍详略；看得懂比压到这个长度要紧。</span><span class="c">设定了目标时长</span></div>
+    <div><span>每个节拍二选一：
+- scene：展开演。有具体的人或物在具体的地方做具体的事；有人开口才配台词，画面自己说得清的动作与场面可以一句台词也没有
+- narration：一句旁白带过。只有旁白，没有角色台词；只用在画面交代不了的地方</span></div>
+    <div><span>改编范围（这几条要严格遵守）：
+- 只改编下面给出的这一段原文。不要续写它之后的剧情，也不要把别处的情节挪进来
+- 原文没交代的事实（年份、人物关系、谁做过什么）一律不要自己补。宁可少一个节拍，也不要编</span></div>
+    <div><span>看得懂（最要紧）：
+- 观众只看这一集，没读过原文。节拍连起来读，要能说出谁、想要什么、为什么这么做、结果怎样
+- 原文里交代身份、世界规则、前因的台词优先留；只表态度、抒情绪的台词可以压
+- 剧情离不开的设定和心理活动，转成角色说出口的台词，尽量用原文的话；只渲染气氛的才删
+- 插叙、倒叙、括号里的补叙也是剧情，不当附注略过；交代真相或改变前文理解的，照样写成节拍</span></div>
+    <div><span>本集的讲法是剧情：
+- 冲突、对峙、反转、抉择一律展开成 scene，靠对白与表演推进
+- 旁白只补画面交代不了的：时间跳转、前情。地点、来者、动作看得出来就不用旁白说，也不替角色说他们该说的话</span><span class="c">讲法 = 剧情</span></div>
+    <div><span>本集的讲法是解说：
+- 旁白是主线，把剧情讲清楚；scene 只留爆点与情绪顶点
+- 角色对白短，一句顶一句，不铺长对话</span><span class="c">讲法 = 解说</span></div>
+    <div><span>- 节拍数由剧情定：一拍讲一件事，讲完就收。时长不够就少几拍，别编内容去填
+- 最后一个节拍收在本集最有张力的地方</span></div>
+    <div><span>哪些展开成 scene：
+- 正面冲突、对峙、反转揭晓的那一刻
+- 主角做出选择、说出关键台词的那一刻
+哪些压成 narration：
+- 赶路、过场、重复回合（三次同类战斗合成一句「她一路杀了过去」）
+哪些整段删掉：
+- 与剧情无关的心理活动、内心独白，这些拍不出来
+- 与本集主线无关的支线
+- 围观议论、弹幕、点评类段落：最多留一条最有信息量的，其余全删</span></div>
+    <div><span>人工指定（和上面的详略规则冲突时，以这里为准）：
+- 一定要展开成 scene 演出来：<span class="h">{要演}</span>。不要缩成 narration，也不要删
+- 直接删掉的：<span class="h">{不要}</span>。不要出现在任何节拍里，旁白里也不要提</span><span class="c">填写了要演或不要</span></div>
+    <div><span>台词要求：
+- 口语，一句一口气能念完；不要书面语长句
+- text 里只写要念出来的字，不要写「某某说道」「他冷冷地说」这类叙述
+- speaker 填说话人的名字。只有旁白（第三人称的画外解说）才填 null
+- speaker 只填一个人：几个人齐声说的，填领头的那一个；衙役、百姓这类没有名字的群演照原样写
+- 原文只有动作描写、但改编时要让角色开口的场合，照样把台词归到那个角色名下，不要算成旁白
+- 整拍只剩旁白就说明它其实是 narration；没人开口的动作段写成不带台词的 scene，不要为它配旁白</span></div>
+    <div><span>- 下列人物有设定图，名字要写对：<span class="f">{已锁定角色名}</span>。其他人物也可以说话，直接写名字即可</span><span class="c">有已锁定角色</span></div>
+    <div><span>原文定位：
+- 每个节拍给出 ends_with：从原文中**逐字抄写**这一拍所改编内容的最后一句（含标点，10–40 字），不能改写或省略
+- 按原文顺序定位；被整段删掉的内容归进它前面那一拍的区间，不单独定位</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准，输出格式照旧）：
+<span class="h">{其他}</span></span></div>
+    <div><span>原文：
+<span class="f">{本集原文}</span></span></div>
+  </div>
+  <table class="out">
+    <tr><th>产出</th><th>用于</th></tr>
+    <tr><td>mode · summary</td><td><a href="#shots">拆分镜</a> 节拍列表、<a href="#draft">逐镜精写</a>「所属节拍」、<a href="#review">审查</a></td></tr>
+    <tr><td>utterances</td><td>拆分镜按下标引用；逐镜精写「这一镜有台词」；<a href="#clip">视频</a>台词行或<a href="#voice">配音</a>正文；审查</td></tr>
+    <tr><td>ends_with</td><td>代码定位每拍对应的原文段，写入拆分镜「原文：」与逐镜精写的原文段；定位失败时不附原文段</td></tr>
+  </table>
+</section>
+
+<!-- 分镜 -->
+<section id="shots">
+  <div class="eyebrow">STEP 5 · TEXT</div>
+  <h2>拆分镜 <code>shotsPrompt</code></h2>
+  <p>只产出镜头结构，不写成品提示词。镜头数直接决定后续生成费用。一拍一次调用，按节拍顺序依次拆；某一拍的回复解析失败就重拆这一拍一次。至少有一个已锁定的角色才能拆分镜。</p>
+  <p class="struct"><b>结构</b>任务 + 拆镜规则 + 镜头语言 + 台词分配 + 资产引用 + 每镜字段 + 额外要求 + 节拍概要 + 本拍 + 上一拍最后一镜</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是导演兼分镜师，把已经定稿的叙事节拍拆成镜头表。台词已定稿，你定每一镜怎么拍：景别、运镜、情绪、与上一镜怎么接，并分配台词。每镜的画面提示词由后一步逐镜单独写，这一步不要写。只输出 JSON，不要解释。</span></div>
+    <div><span>把节拍 <span class="f">{N}</span> 拆成镜头，每镜 <span class="h">{单镜下限}</span>–<span class="h">{单镜上限}</span> 秒。只拆这一拍，其余节拍只是让你知道前后发生了什么。</span></div>
+    <div><span>拆镜规则：</span></div>
+    <div><span>- 整集成片目标约 <span class="h">{单集目标时长}</span> 秒、共 <span class="f">{节拍数}</span> 拍，这只是参考，剧情需要时可以超。排出来明显偏长的话，多半是镜头拆得太碎：把画面上没有新动作的镜头合并掉，别靠缩短每镜时长来凑</span><span class="c">设定了目标时长</span></div>
+    <div><span>- 前 <span class="f">{k}</span> 拍已排约 <span class="f">{已排秒数}</span> 秒，这一拍连同后面 <span class="f">{余下拍数}</span> 拍还剩约 <span class="f">{目标减已排}</span> 秒，按剩下的拍数掂量这一拍拆几镜</span><span class="c">设定了目标时长且不是第一拍；已排秒数按每镜上下限夹过</span></div>
+    <div><span>- **一镜拍一个完整的动作，或一段完整的表演**。拆几镜由画面里有几个动作决定，不由有几句台词决定</span></div>
+    <div><span>- 节拍下面附的「原文」是这一拍改编自的段落：有几个动作、环境和神态长什么样，以它为准</span><span class="c">有节拍附带原文</span></div>
+    <div><span>- 一个节拍里只发生一件事，就只给一镜，哪怕它有好几句台词</span></div>
+    <div><span>- **一镜可以有多个说话人**。一来一回的短对话，只要发生在同一个空间、同一个连续动作里，就放进同一镜，别拆成正反打，每多一镜就要多生成一次视频</span><span class="c">视频自带声音</span></div>
+    <div><span>- **一镜只能有一个说话人**。两个人来回对话，就拆成两镜正反打</span><span class="c">单独配音</span></div>
+    <div><span>- 旁白、画外音、以及「一边做事一边说」的闲话，说话的人**不必出现在画面里**，可以拍他手上的动作、对方的反应或环境，不要整集都是人对着镜头说话
+- **推动剧情的动作要拍到做这件事的人**：谁放下筷子、谁拔刀，观众得认得出是他。只拍手或物件时，前后镜要让人看出这是谁的手
+- **交代剧情的关键台词，画面里要有说话人或听话人的脸**。说话人在机位另一侧，就拆一镜给他，或让运镜落到他身上
+- 推镜、拉镜要写明从什么景别到什么景别；要看清表情的动作（回头、变脸）不给全景
+- 不要为了凑满时长而编造动作；也不要把时长平均分配</span></div>
+    <div><span>镜头语言：
+- **景别跟着这一镜要给的信息走**：交代地点与局势用远景，演动作与人物关系用中景，给情绪、决断、关键物件用近景或特写
+- **只在注意力转移、压力加大或要揭开什么的时候换景别**，别为了每拍都有变化而换；也别一到情绪升级就条件反射地推近
+- **相邻两镜景别、角度、人物关系都一样，这次切镜就等于白切**：换个景别，或者合回一镜
+- **特写不只是拍脸**：手上的动作、眼睛、刀刃、对方的反应，常常比正脸信息更多
+- **默认镜头不动。** 运镜要有理由，比如跟着移动的人、从局部揭开全局、逼近制造压迫。没有理由就固定机位，让人物在画框里动。一镜只做一个运动，不要又推又摇
+- **情绪最强的地方反而要静**：对峙、下决心、说出关键那一句时，镜头停住；运动留给赶路、打斗和转场
+- **情绪写成弧线**：「从戒备转为动摇」比「紧张」有用：一镜之内有变化，画面才有戏
+- **画框里不能只有人**：前景放点东西（门框、桌沿、别人的肩背），背景交代这是哪儿。人物占满画框只在极近特写里成立，连着几镜都这么拍，观众就不知道故事发生在什么地方
+- **人物占画框的比例跟着景别走**：近景与特写才允许人物占大半画框，中景以上要给环境留出位置。对话戏别连着几镜都是人物占满画面的正反打，中间穿插环境、手上的动作、旁观者的反应，这场对话才不会只剩一张张脸</span></div>
+    <div><span>台词分配：
+- 台词已经定稿，你不能改写、增删或合并。只能用 `utterance_indexes` 引用节拍内的台词下标</span></div>
+    <div><span>- 原文里的对白是改编前的素材，不算台词：要念的只有节拍下编号的那些，不要从原文里另加</span><span class="c">有节拍附带原文</span></div>
+    <div><span>- 同一节拍内的每条台词必须被引用**恰好一次**，不能漏、不能重复引用</span></div>
+    <div><span>- **连续几句可以引用到同一镜**：同一个人连说几句，或两个人一来一回，只要讲的是同一件事、画面上也是同一个连续动作</span><span class="c">视频自带声音</span></div>
+    <div><span>- **同一个说话人的连续几句可以引用到同一镜**：只要这几句讲的是同一件事、画面上也是同一个动作</span><span class="c">单独配音</span></div>
+    <div><span>- 这一镜没有声音就给空数组</span></div>
+    <div><span>有设定图的资产怎么引用：</span></div>
+    <div><span>- 可出镜的有设定图的人物：<span class="f">{已锁定角色名}</span>。cast 里只能填这些名字，写别的名字会被拒绝。没有设定图的人物出镜时 cast 留空，少给近景特写：没有参考图，每一镜画出来的脸都会不一样
+- 每个出镜人物挑一张设定图当这一镜的参考图（look）：特写与对话挑半身特写，全身动作挑全身，背面或侧面挑三视图，要看清衣着细节挑服装细节。各人只能从下面列出的里挑：
+  <span class="f">{角色名}</span>（<a class="m" href="#assets">{identity}</a>；着装：<a class="m" href="#assets">{outfit}</a>）：<span class="f">{该角色已有的设定图}</span></span><span class="c">有已锁定角色；「着装」只在这个角色有换装时写</span></div>
+    <div><span>- 名字带「·」的是同一人物的另一身装扮：按这一场穿的那身填 cast，同一人物一镜只填一身</span><span class="c">有换装</span></div>
+    <div><span>- cast 一律给空数组</span><span class="c">没有已锁定角色；拆分镜要求至少锁定一个角色，实际不会出现</span></div>
+    <div><span>- 有设定图的场景：<span class="f">{已锁定场景名}</span>。这一镜确实发生在其中某处就把名字填进 scene_ref，否则留空串
+- **连续几镜在同一处，就逐镜都填**，不要只在头一镜填：留空的那几镜背景由模型自己编，相邻两镜的同一个地方会长得不一样
+- 只有完全看不出所在地的极近特写与插入镜头才留空串</span><span class="c">有已锁定场景</span></div>
+    <div><span>- scene_ref 一律给空串</span><span class="c">没有已锁定场景</span></div>
+    <div><span>- 有设定图的道具：<span class="f">{已锁定道具名}</span>。只有该物件**真的出现在这一镜画面里**时才填进 props，提到但没拍到不算</span><span class="c">有已锁定道具</span></div>
+    <div><span>- props 一律给空数组</span><span class="c">没有已锁定道具</span></div>
+    <div><span>- 屏幕上、倒影里、画像里拍得到的有设定图的人物或道具，也照样填进 cast 或 props：不填就没有参考图，模型只能按名字猜它长什么样</span><span class="c">有人物或道具</span></div>
+    <div><span>每镜给出：
+- summary：这一镜讲什么，一句话
+- scene：这一镜**镜头里看得见的那部分环境**与光线，画得出来的描述。填了 scene_ref 就不用再抄一遍场景设定里的整体结构，但要写清这一镜取到了其中哪一角、什么光
+- shot_size：景别，wide（远景） / full（全景） / medium（中景） / close（近景） / extreme_close（特写） 之一
+- camera：**机位 + 构图**，如「平视，人物居左，门框在前景」「略低机位，过肩」。构图写主体在画框里的位置与前后景关系。**只写静止画面里看得出来的东西**，景别在 shot_size 里，运镜在 camera_move 里
+- camera_move：运镜，static（固定） / push（推） / pull（拉） / pan（摇） / track（跟） / handheld（手持） 之一。一镜只做一个运动，没理由就 static
+- mood：这一镜的情绪弧线，一句话，写成「从 A 转为 B」；没有变化就写这一镜的情绪基调
+- join：与上一镜怎么接，continue / cut / fade 之一。continue = 紧接着上一镜发生，上一镜末帧会当这一镜的参考图，只在同一个场景、机位相近、起终状态相接时用；cut = 各自成镜，硬切，换场景、换机位、空镜与建立镜都用它；fade = 过黑场，只用在幕与集的边界。<span class="f">{本集第一拍：这是本集第一镜，填 cut ／ 其余：第一镜按它和上一拍最后一镜的关系填}</span>
+- clip_source：视频的画面从哪来，first_frame / reference 之一，按这一镜要什么来挑，不偏向哪一种。first_frame = 先出一张首帧定死开场构图，视频从它往下演：适合站位、空间关系、场景与道具细节要准的镜；reference = 人物、场景的设定图直接给视频模型，开场构图由它自己定：适合动作与运镜为主的镜、人物中途入画的镜、有台词要用角色试音的镜。first_frame 模式下视频模型只认首帧里的人，也带不上试音
+- scene 与 camera 要过图像模型的内容审核：血迹、伤口、利器刺入人体这类字眼会让整镜被拒，同样的冲突改用动作、反应与光影来写
+- utterance_indexes：本镜要念的台词在该节拍内的下标数组
+- seconds：本镜时长，数字。按这一镜的动作与台词要多久定：一个简短动作 <span class="h">{单镜下限}</span> 秒就够；对白偏长或表演需要停留时加一两秒；只有画面里有连续动作、或运镜确实需要这么长时，才用到接近 <span class="h">{单镜上限}</span> 秒
+- 有台词的镜头要留够念完的时间。但**不要为了填满时长而人为增加动作**
+- cast：本镜出场的有设定图的人物，每项 {"name","look"}，没有就给空数组
+- scene_ref：本镜所在的有设定图的场景名，单个字符串；不适用就给空串
+- props：本镜画面里出现的有设定图的道具名字数组，没有就给空数组</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准，输出格式照旧）：
+<span class="h">{其他}</span></span></div>
+    <div><span>本集节拍（→ 是这次要拆的）：
+  [节拍 0] <a class="m" href="#beats">{展开演 / 旁白带过}</a>：<span class="m">{summary}</span>
+→ [节拍 <span class="f">{N}</span>] …</span></div>
+    <div><span>要拆的节拍 <span class="f">{N}</span>：<a class="m" href="#beats">{展开演 / 旁白带过}</a>：<span class="m">{summary}</span>
+  (0) <span class="m">{speaker，null 写「旁白」}</span>：<span class="m">{text}</span>
+  原文：<span class="f">{这一拍的原文段}</span></span><span class="c">原文段仅定位成功时附</span></div>
+    <div><span>上一拍最后一镜（这一拍的第一镜要和它接得上，景别与机位别重复）：<span class="f">{summary}</span>；<span class="f">{景别}</span>，<span class="f">{camera}</span>；在<span class="f">{场景}</span></span><span class="c">不是本集第一拍</span></div>
+  </div>
+  <table class="out">
+    <tr><th>产出</th><th>用于</th></tr>
+    <tr><td>summary</td><td><a href="#draft">逐镜精写</a>「这一镜讲」与相邻镜概要</td></tr>
+    <tr><td>scene</td><td>逐镜精写「环境」、<a href="#frame">首帧</a>取景行、<a href="#clip">视频</a>「画面：」</td></tr>
+    <tr><td>shot_size · camera</td><td>逐镜精写「景别构图」、首帧取景行（参考图模式的视频不写入，由 image_prompt 写明取景）</td></tr>
+    <tr><td>camera_move</td><td>逐镜精写「运镜」、视频「动作：」行首</td></tr>
+    <tr><td>mood</td><td>逐镜精写「情绪」</td></tr>
+    <tr><td>join</td><td><code>continue</code>：作品开了「末帧参考」、且与上一镜挂同一个场景锁定版时，上一镜末帧作为参考图（见<a href="#frame">首帧</a>）；<code>fade</code>：合成时这一镜前的接缝过黑场</td></tr>
+    <tr><td>clip_source</td><td>决定视频用首帧还是参考图；也影响逐镜精写的取景要求</td></tr>
+    <tr><td>cast · scene_ref · props</td><td>首帧参考图、逐镜精写「出场人物」与「画面里的道具」、视频的角色名与音色</td></tr>
+    <tr><td>utterance_indexes</td><td>本镜台词，写入逐镜精写、视频或<a href="#voice">配音</a></td></tr>
+    <tr><td>seconds</td><td>逐镜精写「时长」；视频按端点支持的档位向上取整后发送</td></tr>
+  </table>
+  <p><b>回复的校验与修正</b></p>
+  <ul class="plain">
+    <li><code>cast</code> 写了未锁定的名字（别名也认）：整次拆分镜失败，需锁定该角色或重拆。</li>
+    <li><code>scene_ref</code>、<code>props</code> 对不上已锁定资产：丢掉该引用并记一条警告，这一镜按文字描述现画。</li>
+    <li>有台词没被引用，或被多镜重复引用：整次失败。单独配音时一镜出现多个说话人，同样失败。</li>
+    <li><code>join</code> 为 <code>continue</code>，但这是本集第一镜、<code>cast</code> 为空、没挂场景或与上一镜场景不同：改为 <code>cut</code> 并记一条警告。</li>
+    <li>枚举字段的取值认不出：改用默认值并记一条警告。</li>
+    <li><code>seconds</code>：先限制在单镜时长上下限之内，再按作品语速估算这一镜台词的念白时长，不足时垫高，因此可能超过单镜上限。</li>
+  </ul>
+</section>
+
+<!-- 审查 -->
+<section id="review">
+  <div class="eyebrow">AFTER STEP 4 · 5 · TEXT</div>
+  <h2>审查 <code>reviewPrompt</code></h2>
+  <p>写节拍、拆分镜完成后各自动执行一次，也可手动发起。本集已有分镜时审查分镜，否则审查节拍。只出报告，不修改节拍或分镜；审查失败只记一条警告，流程照常往下走。</p>
+  <p class="struct"><b>结构</b>任务 + 要求 + 额外要求 + 前几集 + 本集</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是第一次看这部短剧的观众，没读过原著。只根据给你的内容复述剧情，指出看不懂、接不上的地方。只输出 JSON，不要解释。</span></div>
+    <div><span>下面是短剧《<a class="m" href="#episode">{title}</a>》这一集的叙事节拍。</span><span class="c">审查节拍</span></div>
+    <div><span>下面是短剧《<span class="m">{title}</span>》这一集的分镜：每镜是观众看到的画面、动作和听到的台词。</span><span class="c">审查分镜</span></div>
+    <div><span>只凭下面给的内容理解。即使你认得这部作品，也当作没看过，不要用原著知识补全。</span></div>
+    <div><span>要做的：
+- retelling：复述这一集讲了什么，包括谁、想要什么、为什么这么做、发生了什么、结局意味着什么。看不出来的地方直说看不出来，不要猜着补
+- gaps：每一处看不懂或接不上的地方。at 写在哪（如「<span class="f">{节拍 / 镜}</span> 3」「<span class="f">{节拍 / 镜}</span> 5 到 <span class="f">{节拍 / 镜}</span> 6 之间」），missing 写缺了什么：身份、动机、因果、物件、时间地点，一句话说清
+- score：1–10，只评剧情看不看得懂，不评画面好坏、文笔、人物塑造
+- 没有台词的打斗、氛围镜本身不算缺，只看它前后剧情接不接得上</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准，输出格式照旧）：
+<span class="h">{其他}</span></span></div>
+    <div><span>前几集（观众看过）：
+《<span class="m">{title}</span>》<a class="m" href="#beats">{各拍 summary}</a>；…</span><span class="c">前面有集已写节拍</span></div>
+    <div><span>本集：
+[节拍 1] <span class="m">{summary}</span></span><span class="c">审查节拍</span></div>
+    <div><span>[镜 1] <a class="m" href="#draft">{image_prompt}</a></span><span class="c">审查分镜；这一镜还没写提示词时换成「<span class="m">{summary}</span>。<span class="m">{scene}</span>」</span></div>
+    <div><span>  动作：<a class="m" href="#draft">{motion_prompt}</a></span><span class="c">有 motion_prompt</span></div>
+    <div><span>  <span class="m">{speaker，null 写「旁白」}</span>：「<span class="m">{text}</span>」</span></div>
+  </div>
+</section>
+
+<!-- 精写 -->
+<section id="draft">
+  <div class="eyebrow">STEP 6 · TEXT · 按需每镜一次</div>
+  <h2>逐镜精写 <code>shotPromptDraft</code></h2>
+  <p>逐镜精写指为一镜写成品提示词，产出送往图像、视频模型的正文：画面、动作、声音，以及每句台词怎么说。拆分镜不写这些；生成某一镜的首帧或视频时，这一镜的 <code>image_prompt</code> 为空就先写，也可以在分镜里对单镜点「重写提示词」。按镜序生成时，上一镜已经写好，这一镜能读到上一镜收在什么动作上。</p>
+  <p class="struct"><b>结构</b>任务 + 本镜定稿信息 + 出场人物 + 道具 + 台词 + image_prompt 写法 + motion_prompt 写法 + sound 写法 + lines 写法 + 过审与画风 + 原文段 + 额外要求</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是分镜画师兼提示词作者，为一个镜头写给图像与视频生成模型直接使用的正文。只输出 JSON，不要解释。</span></div>
+    <div><span>为下面这一镜写成品提示词：image_prompt 是<span class="m">{首帧 / 开场那一刻的}</span>静止画面，motion_prompt 是这一镜从<span class="m">{首帧 / 开场}</span>起的运动过程，sound 是这一镜听得到的声音。
+这几段都会一字不改地发给生成模型，要写成完整的描述，别写成概要。</span><span class="c">后者为参考图模式，下同</span></div>
+    <div><span>这一镜（已定稿，不能改）：
+- 本集：《<a class="m" href="#episode">{title}</a>》，<span class="m">{synopsis}</span></span></div>
+    <div><span>- 所属节拍：<a class="m" href="#beats">{节拍 summary}</a></span><span class="c">手工插入的镜头无此行</span></div>
+    <div><span>- 这一镜讲：<a class="m" href="#shots">{summary}</a>
+- 景别构图：<span class="m">{shot_size}</span>，<span class="m">{camera}</span>；image_prompt 按这个取景写，不要换景别
+- 运镜：<span class="m">{camera_move}</span>；motion_prompt 的镜头运动只做这一个
+- 情绪：<span class="m">{mood}</span>；写成画得出来的变化，不写形容词
+- 环境：<span class="m">{scene}</span></span></div>
+    <div><span>- 场景设定：<a class="m" href="#assets">{场景 description}</a>，<span class="m">{lighting}</span></span><span class="c">挂了场景</span></div>
+    <div><span>- 时长：<span class="m">{seconds}</span> 秒</span></div>
+    <div><span>- 上一镜：<span class="m">{上一镜 summary}</span>（<span class="m">{上一镜 camera}</span>）</span><span class="c">本集第一镜时整行换成「- 这是本集第一镜」</span></div>
+    <div><span>- 上一镜收在：<a class="m" href="#draft">{上一镜 motion_prompt}</a>；这一镜的<span class="m">{首帧 / 开场}</span>姿态与站位要接得上它</span><span class="c">不是本集第一镜；上一镜还没有 motion_prompt 时冒号后为空</span></div>
+    <div><span>- 下一镜：<span class="m">{下一镜 summary}</span>（<span class="m">{下一镜 camera}</span>）</span><span class="c">不是本集最后一镜</span></div>
+    <div><span>出场人物：<span class="f">{角色名}</span>（<span class="m">{identity}</span>；<span class="m">{traits}</span>）；…。都有设定图做参考：直接写名字，不要再描述长相、发型与服装；动作要合乎各自的体型与形态，非人形的不要写成人的手势与坐姿</span><span class="c">cast 非空</span></div>
+    <div><span>画面里的道具：<span class="f">{道具名}</span>（<span class="m">{description}</span>）；…</span><span class="c">props 非空</span></div>
+    <div><span>这一镜有台词：<span class="m">{speaker}</span>说「<span class="m">{text}</span>」；…。台词原文由系统另行拼接，image_prompt、motion_prompt、sound 里都不要抄</span><span class="c">本镜有台词；speaker 为 null 时写成「旁白」</span></div>
+    <div><span>image_prompt 怎么写：
+- 按「谁 + 在做什么 + 对着谁或什么 + 位置关系 + 表情与身体反应 + 前景与背景」组织成连贯的一段
+- 主体优先：人物与动作写清楚，环境只作陪衬，写身边一两件东西、背景一句远景就够。原文里现成的环境与神态细节优先用
+- 人物占画框的比例按景别来：近景特写才占大半画框，中景以上要给环境留出位置
+- 情绪写成画得出来的：瞳孔、肩线、脚步，不写「他很害怕」
+- 这一镜推动剧情的动作是谁做的，画面里要认得出他：至少露出身形或侧脸，不要只剩一只手或一件物件
+- 体量远大于人的主体，尺度靠画面里大小已知的东西对比出来：写清它到楼层、车辆或人影的哪个位置；让它的局部撑出画框，比把全身缩进画框更显大</span></div>
+    <div><span>- 这一镜的台词要认得出是谁说的、对谁说的：说话人或听话人至少一方露脸，不要只拍背影</span><span class="c">有具名说话人</span></div>
+    <div><span>- 这一镜没有首帧图，视频模型只按这段取景：写明机位站在哪、朝着哪、前景是什么、主体在画框什么位置；写的是动作开始前的那一刻，不写动作进行到一半的瞬间</span><span class="c">clip_source = reference</span></div>
+    <div><span>- 出场人物都要在首帧里认得出来，至少露出身形或侧脸：视频模型只认首帧里的人，首帧里没有的人到视频里会换一副长相</span><span class="c">clip_source = first_frame 且 cast 非空</span></div>
+    <div><span>- 反例（过短）：「她站在门口发呆。」这句没有环境、没有前后景，模型只能把人怼到镜头前</span></div>
+    <div><span>motion_prompt 怎么写：
+- 第一句先说清主体与局面：谁、正对着谁或什么、在做什么，然后才是动作
+- <span class="m">{seconds}</span> 秒里的过程：从<span class="m">{首帧 / 开场}</span>的姿态起，动作怎么起、怎么进行、收在哪个姿态或反应上
+- 一段连贯的过程，中间不留空档：前一个动作收在哪，下一个就从哪起，不要列成几个各自独立的片段
+- 镜头运动按上面定好的运镜写，写清跟着什么动；固定就写「镜头固定」。一镜只做一个运动，不要又推又摇
+- 「缓缓」「轻微」「慢慢」这类幅度词只留给真正要控制幅度的那个动作，不要每句都挂</span></div>
+    <div><span>- 开口的人边说边做事：写清说话时手上、身上在做什么，说话与动作同时进行</span><span class="c">本镜有具名台词</span></div>
+    <div><span>- 人物位置写成画面方位：谁在画面左、谁在右，谁从哪一侧入画、停在哪里
+- 这一镜容易被演错的地方写成画面事实：动作做到哪一步为止、物件始终在哪（「外衣只套上一半」「茶杯始终在桌上」）</span></div>
+    <div><span>sound 怎么写：
+- 这一镜听得到什么，按主次写成一两句：哪个声音最响、哪些垫在底下
+- 要靠某个声音交代剧情的，写清什么声音、从哪里传来、什么时候响起或断掉</span></div>
+    <div><span>- 台词经对讲机这类设备传出的，写上设备本身的声音</span><span class="c">本镜有台词</span></div>
+    <div><span>- 不写音乐，不写台词</span></div>
+    <div><span>lines 怎么写：
+- 按上面台词的顺序每句一条 how：音量、语速、嗓音的质地（压低、发颤、拖长、一字一顿、喊出来），当面说还是经设备传出
+- 写听得出来的声音，不写情绪形容词；合乎说话人的身份与此刻的处境</span><span class="c">本镜有台词</span></div>
+    <div><span>两段都要过图像与视频模型的内容审核：血迹、伤口、利器刺入人体这类字眼会让整镜被拒，改用动作、反应与光影写。
+画风由系统另外加上，不要写画风、艺术家名或「高清」「杰作」这类词。</span></div>
+    <div><span>原文这一段是这么写的（细节可取用，但只写本镜拍到的，不要把别的镜头的内容写进来）：
+<span class="f">{这一拍的原文段}</span></span><span class="c">原文段定位成功</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准，输出格式照旧）：
+<span class="h">{其他}</span></span></div>
+  </div>
+  <table class="out">
+    <tr><th>产出</th><th>用于</th></tr>
+    <tr><td>image_prompt</td><td><a href="#frame">首帧</a>画面描述（角色名第一次出现处加参考图编号）；参考图模式下写入<a href="#clip">视频</a>取景段；<a href="#review">审查</a></td></tr>
+    <tr><td>motion_prompt</td><td>视频「动作：」；下一镜逐镜精写的「上一镜收在」；审查</td></tr>
+    <tr><td>sound</td><td>视频的声音段（仅视频自带声音时）</td></tr>
+    <tr><td>lines[].how</td><td>按顺序存到每句台词上，视频提示词里紧跟在该句台词前</td></tr>
+  </table>
+</section>
+
+<!-- 首帧 -->
+<section id="frame">
+  <div class="eyebrow">STEP 7 · IMAGE · 每镜一次</div>
+  <h2>首帧 <code>firstFramePrompt</code></h2>
+  <p>参考图约束外观，文字约束取景。参考图说明的顺序与实际发送的参考图一一对应。<code>image_prompt</code> 为空时不出图。</p>
+  <p class="struct"><b>结构</b>画风 + 参考图说明 + 取景 + 画面描述 + 末帧参考说明 + 收尾 + 额外要求</p>
+  <div class="pr">
+    <div><span><span class="h">{作品画风}</span></span></div>
+    <div><span>参考图（只管长相与外观；这一镜怎么取景看下面的描述，光线、色调与质感照开头的画风）：
+- @图片1 是<span class="f">{类别}</span>「<span class="f">{名称}</span>」（<a class="m" href="#assets">{外观描述}</a>），<span class="f">{用途}</span>
+- @图片2 是…
+画框里拍到哪一部分、主体多大、站在画框什么位置、背景里有什么，一律按下面的描述来。</span><span class="c">挂了参考图</span></div>
+    <div><span>人物参考图是纯灰背景的设定图：把人物放进这一镜的环境里，按下面描述的动作与朝向重新摆放，光线与色温和环境一致。</span><span class="c">参考图含角色</span></div>
+    <div><span><a class="m" href="#shots">{shot_size}</a>，<span class="m">{camera}</span>。<span class="m">{scene}</span></span></div>
+    <div><span><a class="m" href="#draft">{image_prompt}</a></span><span class="c">角色名第一次出现处加「（@图片N）」</span></div>
+    <div><span>这一镜紧接着上一镜发生：沿用末帧里的光线、色调与空间位置关系，只按上面的描述推进动作与机位，不要重新布置场景。</span><span class="c">带末帧参考</span></div>
+    <div><span>用姿态、反应与光影表现冲突，画面干净克制。
+画面内不要出现任何文字、字幕或水印。</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准）：
+<span class="h">{其他}</span></span></div>
+  </div>
+
+  <h3>参考图说明</h3>
+  <table>
+    <tr><th>类别</th><th>括号内描述</th><th>用途（同类只在首条写）</th></tr>
+    <tr><td>场景</td><td>description，lighting</td><td>提供这个地点的空间结构、陈设位置与材质</td></tr>
+    <tr><td>人物</td><td>traits（不含 outfit）</td><td>全身：只提供长相、发型、服装与配饰<br>半身特写：只提供长相、发型、面部特征与上身服装<br>三视图：提供体态、侧面与背面的轮廓，以及服装<br>服装细节：只提供服装、配饰与材质，图里的平铺摆法不要带进画面</td></tr>
+    <tr><td>人物（非人形角色）</td><td>traits</td><td>全身：只提供体态、头部结构、体表与配色<br>半身特写：只提供头部结构、眼睛与口部<br>三视图：提供体态与侧面、背面的轮廓</td></tr>
+    <tr><td>道具</td><td>description</td><td>提供这件物品的外观与材质</td></tr>
+    <tr><td>上一镜的末帧</td><td>这一镜紧接着它发生</td><td>—</td></tr>
+  </table>
+  <p class="aside"><b>末帧参考</b>　同时满足三个条件时，上一镜视频的末帧作为第一张参考图：这一镜的 <a href="#shots">join</a> 为 <code>continue</code>，作品的「末帧参考」开关打开，这一镜与上一镜挂的是同一个场景锁定版。上一镜还没有视频或取末帧失败时不带，并记一条警告。</p>
+  <p class="aside"><b>排序</b>　不带末帧参考：场景 → 角色（lead 在前）→ 道具；带末帧参考：末帧 → 角色 → 道具 → 场景。参考图超过模型能接收的张数时从末尾去掉；末帧被去掉时，「这一镜紧接着上一镜发生」那一句也不写。</p>
+</section>
+
+<!-- 视频 -->
+<section id="clip">
+  <div class="eyebrow">STEP 8 · VIDEO · 每镜一次</div>
+  <h2>视频 <code>clipPrompt</code></h2>
+  <p>按 <code>clip_source</code> 分两种模式：首帧模式以首帧图为起始帧；参考图模式不生成首帧，设定图直接送视频模型，并在最前面写入首帧提示词中的取景文字。<code>motion_prompt</code> 为空时不生成。</p>
+  <p class="struct"><b>结构</b>取景段（参考图模式）+ 画面 + 动作 + 一致性 + 时长 + 收尾 + 台词（视频自带声音）+ 额外要求</p>
+  <div class="pr">
+    <div><span><a class="m" href="#frame">{首帧提示词中的画风、参考图说明、scene、画面描述、接续句}</a></span><span class="c">仅参考图模式</span></div>
+    <div class="gap"></div>
+    <div><span>画面：<a class="m" href="#shots">{scene}</a>。画面里是<span class="m">{cast 名单}</span></span><span class="c">参考图模式不含 scene；空项省略</span></div>
+    <div><span>动作：镜头<span class="m">{camera_move}</span>。<a class="m" href="#draft">{motion_prompt}</a></span><span class="c">固定机位时省略「镜头…。」</span></div>
+    <div><span>保持首帧的人物长相、服装与画风不变。
+一镜到底，不切镜。摄像机始终在首帧的这一侧，保持摄影轴线连续，保持首帧已定下的室内外与前后景关系。</span><span class="c">首帧模式</span></div>
+    <div><span>人物长相与服装全程和参考图保持一致，画风保持不变。
+一镜到底，不切镜。摄像机始终在上面描述的机位这一侧，保持摄影轴线连续，保持上面描述的室内外与前后景关系。</span><span class="c">参考图模式</span></div>
+    <div><span>这一镜 <span class="f">{秒数}</span> 秒，把上面的动作演成完整的过程：有起势、有进行、有收住；动作用不完这个长度就放慢节奏或延长停顿，人物全程留在画面内。</span><span class="c">秒数按端点支持的档位向上取整</span></div>
+    <div><span>用动作与镜头语言表现冲突，画面干净克制。</span></div>
+    <div><span>声音：<a class="m" href="#draft">{sound}</a>。不加背景音乐。</span><span class="c">视频自带声音且已写 sound；否则为「声音只保留人物对白、环境声与动作音效，不加背景音乐。」</span></div>
+    <div><span>画面里不要出现字幕、文字或水印。</span></div>
+    <div class="gap"></div>
+    <div><span>旁白念，<a class="m" href="#draft">{how}</a>：「<a class="m" href="#beats">{text}</a>」</span><span class="c">旁白；没写 how 时省略「，{how}」，下同</span></div>
+    <div><span>「<span class="m">{speaker}</span>」（<a class="m" href="#assets">{voice}</a>）说，<a class="m" href="#draft">{how}</a>：「<span class="m">{text}</span>」</span><span class="c">说话人在 cast 中，或没有设定图</span></div>
+    <div><span>画外传来「<span class="m">{speaker}</span>」（<span class="m">{voice}</span>）的声音，<a class="m" href="#draft">{how}</a>：「<span class="m">{text}</span>」（<span class="m">{speaker}</span>不在画面里）</span><span class="c">说话人有设定图、不在 cast 中</span></div>
+    <div><span>这是一段对白，按上面的顺序依次说完，一句说完下一句再开口，不同说话人的声音要分得开，不要让同一个人把所有台词都念了。</span><span class="c">具名台词多于一句</span></div>
+    <div><span>台词必须逐字念出，口型与之对上；不要加旁白或其他人声。</span><span class="c">全部在 cast 中</span></div>
+    <div><span>这几句都是画外的声音，逐字念出即可；画面里的人不开口、不对口型，只做听到这些话的反应。</span><span class="c">全部为画外具名</span></div>
+    <div><span>这几句是旁白，逐字念出即可；画面里不要因此多出一个说话的人，不要有人对口型。</span><span class="c">全部为旁白</span></div>
+    <div><span>台词逐字念出，画面里的角色开口时对上口型；画外的声音只出声，画面里不要有人对它口型；「<span class="m">{speaker}</span>」在画面里就由本人开口，不在就只出声，画面里的其他人不替其对口型；不要加其他人声。</span><span class="c">其余情况；第二句在有画外具名或旁白时加，第三句在有无设定图的说话人时加</span></div>
+    <div class="gap"></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准）：
+<span class="h">{其他}</span></span></div>
+  </div>
+  <p class="aside">台词各行仅在视频自带声音且本镜有台词时出现。台词之后是总述：具名台词多于一句时加「这是一段对白」那一句，再按本镜台词构成从其后四条规则中选一条。音色括号先查 cast，再查已锁定角色（含别名），查不到则不加括号。换装资产出场时，画面、台词与参考图说明里都写本体的名字，音色也取自本体。首帧模式不写入 <code>camera</code> 与 <code>image_prompt</code>，构图已由首帧确定。</p>
+
+  <h3 id="h3">MiniMax H3 <code>h3ClipPrompt</code></h3>
+  <p>视频端点声明 <code>prompt_style: h3</code> 时改用这一种，按 MiniMax 官方的<a href="https://github.com/MiniMax-AI/MiniMax-H3/tree/d21241f0a4b3acbb34c97dae47fa417b7065e438/skills/h3-prompt-writing">提示词写法</a>组装：段名、镜头与说话人标记用英文，内容仍为中文。只有一个 <code>[Shot 1]</code>、不带切换时间点，即不切镜；时长只通过请求参数传递；<code>non_diegetic_music: N/A</code> 表示不加背景音乐。接口见 MiniMax <a href="https://platform.minimax.cn/docs/api-reference/video-generation-v2-create">视频生成 v2</a>。</p>
+  <p class="struct"><b>首帧模式</b>首帧引用 + 描述段 + 声音 + 配乐</p>
+  <div class="pr">
+    <div><span>For the target video, at 0.00 seconds into the target video, &lt;Picture 1&gt; (from [Shot 1]) is fully referenced.</span></div>
+    <div class="gap"></div>
+    <div><span>integrated_multimodal_description: [Shot 1] 保持首帧的人物长相、服装、位置与画风不变。<span class="m">{描述段}</span></span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准）：
+<span class="h">{其他}</span></span></div>
+    <div class="gap"></div>
+    <div><span>overall_soundscape: <a class="m" href="#draft">{sound}</a>。人声只有上面的台词。</span><span class="c">无台词时为「没有人声。」；没写 sound 时前半为「环境声与动作音效贴合画面，」</span></div>
+    <div class="gap"></div>
+    <div><span>non_diegetic_music: N/A</span></div>
+  </div>
+  <p class="struct"><b>参考图模式</b>参考对象 + 剧情 + 保留说明 + 画风与描述段 + 声音 + 配乐</p>
+  <div class="pr">
+    <div><span>subject_definitions:
+&lt;Subject <span class="f">{N}</span>&gt; is <span class="m">{类别}</span>「<span class="m">{名字}</span>」 in &lt;Picture <span class="f">{N}</span>&gt;: <span class="m">{资产描述}</span></span><span class="c">每张参考图一行，顺序与参考图一致</span></div>
+    <div><span>&lt;Audio <span class="f">{K}</span>&gt; is the voice-timbre reference for &lt;Subject <span class="f">{N}</span>&gt; (S<span class="f">{n}</span>), containing a spoken Chinese vocal layer.</span><span class="c">每段试音一行，顺序与参考音频一致</span></div>
+    <div class="gap"></div>
+    <div><span>summary:
+[reference generation] <a class="m" href="#shots">{summary}</a></span><span class="c">带试音时为 [reference generation + audio reference]</span></div>
+    <div class="gap"></div>
+    <div><span>retention_analysis:
+&lt;Subject <span class="f">{N}</span>&gt;: fully_preserved - <span class="m">{用途}</span></span><span class="c">用途同上表，同类只在首条写</span></div>
+    <div><span>&lt;Subject <span class="f">{N}</span>&gt;: partially_preserved - 这一镜紧接着它发生，沿用其中的光线、色调与空间位置关系，只按下面的描述推进动作与机位，不要重新布置场景。</span><span class="c">上一镜的末帧</span></div>
+    <div><span>&lt;Audio <span class="f">{K}</span>&gt;: reference - its vocal timbre guides the dialogue delivery of &lt;Subject <span class="f">{N}</span>&gt; without copying the original signal.</span><span class="c">每段试音一行</span></div>
+    <div><span>人物参考图是纯灰背景的设定图：把人物放进这一镜的环境里，按描述的动作与朝向重新摆放，光线与色温和环境一致。</span><span class="c">有角色参考图</span></div>
+    <div class="gap"></div>
+    <div><span>detailed_description:
+<span class="m">{画风}</span>
+[Shot 1] <span class="m">{scene}</span>。<a class="m" href="#draft">{image_prompt}</a>。<span class="m">{描述段}</span></span><span class="c">image_prompt 里角色名第一次出现处标 &lt;Subject N&gt;</span></div>
+    <div><span>额外要求（和上面的规则冲突时，以这里为准）：
+<span class="h">{其他}</span></span></div>
+    <div class="gap"></div>
+    <div><span>overall_soundscape:
+<a class="m" href="#draft">{sound}</a>。人声只有上面的台词。</span><span class="c">同首帧模式</span></div>
+    <div class="gap"></div>
+    <div><span>non_diegetic_music:
+N/A</span></div>
+  </div>
+  <p class="struct"><b>描述段</b>各句接成一段，空项省略</p>
+  <div class="pr">
+    <div><span>镜头<span class="m">{camera_move}</span>。</span><span class="c">固定机位时省略</span></div>
+    <div><span><a class="m" href="#shots">{scene}</a>。</span><span class="c">仅首帧模式</span></div>
+    <div><span>画面里是<span class="m">{cast 名单}</span>。</span></div>
+    <div><span><a class="m" href="#draft">{motion_prompt}</a>。</span></div>
+    <div><span>摄像机始终在首帧的这一侧，保持摄影轴线连续与前后景关系。</span><span class="c">参考图模式为「描述的机位这一侧」</span></div>
+    <div><span>旁白 (S<span class="f">{n}</span>)，<a class="m" href="#draft">{how}</a>， says in an off-screen voiceover: &lt;d&gt;[Chinese] <a class="m" href="#beats">{text}</a>&lt;/d&gt; while the on-screen characters' lips remain completely closed.</span><span class="c">旁白</span></div>
+    <div><span><span class="m">{speaker}</span> &lt;Subject <span class="f">{N}</span>&gt; (S<span class="f">{n}</span>)（<a class="m" href="#assets">{voice}</a>），<a class="m" href="#draft">{how}</a>， says: &lt;d&gt;[Chinese] <span class="m">{text}</span>&lt;/d&gt;</span><span class="c">说话人在 cast 中，或没有设定图；带了试音时括号为「音色取自 &lt;Audio K&gt;」；没写 how 时省略「，{how}，」，下同</span></div>
+    <div><span><span class="m">{speaker}</span> &lt;Subject <span class="f">{N}</span>&gt; (S<span class="f">{n}</span>)（<span class="m">{voice}</span>），<a class="m" href="#draft">{how}</a>， says off-screen: &lt;d&gt;[Chinese] <span class="m">{text}</span>&lt;/d&gt; while the on-screen characters' lips remain completely closed.</span><span class="c">说话人有设定图、不在 cast 中</span></div>
+    <div><span><span class="m">{台词总述}</span></span><span class="c">同通用写法的总述：「这是一段对白」那一句按条件加，再从四条规则中选一条</span></div>
+    <div><span>用动作与镜头语言表现冲突，画面干净克制。画面里不要出现字幕、文字或水印。</span></div>
+  </div>
+  <p class="aside">说话人按第一次开口的顺序编 (S1)、(S2)，旁白也占一个编号；音色只在第一次开口时写。&lt;Subject N&gt; 只在参考图模式、说话人有参考图时写。参考图模式下，在画面里开口、锁定版有试音的说话人随请求带上试音，按开口顺序编 &lt;Audio K&gt;：段数上限取视频端点声明的 <code>max_reference_audios</code>，每段不短于 2 秒，合计 15 秒按人数均分，比份额长的截取前段。英文标记与中文之间留一个空格。</p>
+</section>
+
+<!-- 配音 -->
+<section id="voice">
+  <div class="eyebrow">STEP 9 · VOICE · 每镜一次</div>
+  <h2>配音</h2>
+  <p>调用配音模型（语音合成，TTS），没有提示词模板。仅单独配音时执行；视频自带声音时显示「无需生成」，没有台词的镜头跳过。</p>
+  <table>
+    <tr><th>参数</th><th>内容</th></tr>
+    <tr><td>text</td><td>本镜台词 <a href="#beats">text</a>，逐句换行</td></tr>
+    <tr><td>voice_hint</td><td>说话人的 <a href="#assets">voice</a>，查找顺序同视频。旁白、未查到或音色为空时不传，使用配音端点的默认音色</td></tr>
+    <tr><td>校验</td><td>本镜出现多个说话人时报错</td></tr>
+  </table>
+</section>
+
+<!-- 附：建议集数 -->
+<section id="suggest">
+  <div class="eyebrow">APPENDIX · EPISODES</div>
+  <h2>建议集数 <code>suggestPrompt</code></h2>
+  <p>辅助按钮，结果填入「集数」，可改。模板没有「其他」框。模型给出的集数不超过原文字数 ÷ 400（至少 1 集）。</p>
+  <p class="struct"><b>结构</b>任务 + 念白时长 + 目标时长 + 判断依据 + 原文</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是短剧编剧，只判断一份原文该切成几集。只输出 JSON，不要解释。</span></div>
+    <div><span>判断下面这份原文该切成几集短剧，给出集数和一句话理由。</span></div>
+    <div><span>原文逐字念完约 <span class="f">{念白分钟数}</span> 分钟。</span></div>
+    <div><span>成片每集约 <span class="h">{单集目标时长}</span> 秒，但改编会大幅压缩，别拿念白时长直接除。</span><span class="c">设定了目标时长</span></div>
+    <div><span>未设单集目标时长，按剧情段落判断。</span><span class="c">未设目标时长</span></div>
+    <div><span>判断依据：
+- 数原文里有几个完整的剧情起落，每个起落一集
+- 一集要有自己的开场、推进与收束，切得太碎会让每集只剩半件事
+- 只有一个起落就回 1，说明这份原文本来就是一集，不必切</span></div>
+    <div><span>原文：
+<span class="f">{原文全文}</span></span></div>
+  </div>
+</section>
+
+<!-- 附：推荐画风 -->
+<section id="style">
+  <div class="eyebrow">APPENDIX · STYLE</div>
+  <h2>推荐画风 <code>stylePrompt</code></h2>
+  <p>辅助按钮，从推荐中选一条填入「画风」，可改。模板没有「其他」框。模型挑的名称不在预设里的直接丢弃，最多保留 3 条；全部不在预设里时报错。</p>
+  <p class="struct"><b>结构</b>任务 + 画风清单 + 挑选依据 + 原文开头</p>
+  <div class="pr">
+    <div class="sys"><span>system：你是短剧美术指导，只从给定的画风清单里挑，不自己造词。只输出 JSON，不要解释。</span></div>
+    <div><span>从下面的画风清单里挑 2–3 条最配这个故事的，给出名称和一句话理由。</span></div>
+    <div><span>清单（只能从这里面挑，名称逐字抄写）：
+<span class="f">{分组名}</span>
+- <span class="f">{预设名}</span>：适合<span class="f">{适用题材}</span></span><span class="c">来自 shared/src/styles.ts</span></div>
+    <div><span>挑选依据：
+- 题材与年代先对上：古装不配赛博朋克，现代都市不配工笔重彩
+- 再看情绪与节奏：同一个题材里，悬疑压暗、日常给亮、打斗给强对比
+- 挑出来的几条要各走一个方向，别都在同一组里
+- 理由里说清是原文哪一处让你这么挑的，不要写「画面精美」这种放哪儿都成立的话</span></div>
+    <div><span>原文开头：
+<span class="f">{原文前 4000 字}</span></span></div>
+  </div>
+  <p class="aside">选定后该预设的画风词写入作品画风（可改），此后逐字进入 <a href="#look">设定图</a>、<a href="#frame">首帧</a> 与参考图模式的 <a href="#clip">视频</a>。</p>
+</section>
+
+<!-- 附：产物过时规则 -->
+<section id="stale">
+  <div class="eyebrow">APPENDIX · STALE</div>
+  <h2>产物过时规则</h2>
+  <p>改动上游内容后，照旧内容做出的产物标为过时。过时的产物仍保留、仍可用于合成（合成前需确认），是否重做由人决定。产物之间的依赖为：首帧 → 视频 → 合成版，配音 → 合成版；标记了上游，下游一并标记。</p>
+  <table>
+    <tr><th>改了什么</th><th>从哪一件开始过时</th></tr>
+    <tr><td>这一集的分集区间（定稿时与上次定稿比较）</td><td>这一集每一镜的全部产物与合成版；节拍退回草稿</td></tr>
+    <tr><td>这一份原文的正文（修改时立即标记）</td><td>它名下每一集每一镜的全部产物与合成版</td></tr>
+    <tr><td><code>scene</code> <code>camera</code> <code>shot_size</code> <code>join_mode</code> <code>image_prompt</code> <code>cast</code> <code>scene_ref</code> <code>props</code></td><td>首帧</td></tr>
+    <tr><td>引用的资产更新到新锁定版，且音色以外的内容（描述、设定图）有变化</td><td>首帧</td></tr>
+    <tr><td>引用的资产更新到新锁定版，只有音色描述或试音变了</td><td>视频自带声音时为视频（试音只在参考图模式下计入）；单独配音时为配音（只看音色描述）</td></tr>
+    <tr><td><code>motion_prompt</code> <code>camera_move</code> <code>clip_source</code></td><td>视频</td></tr>
+    <tr><td><code>utterances</code></td><td>配音；视频自带声音时为视频</td></tr>
+    <tr><td><code>sound</code></td><td>视频自带声音时为视频；单独配音时不标记</td></tr>
+    <tr><td><code>seconds</code></td><td>合成版；视频自带声音时为视频</td></tr>
+    <tr><td>增删镜头</td><td>合成版</td></tr>
+    <tr><td><code>mood</code></td><td>不标记：它只用于逐镜精写，点「重写提示词」后才影响画面</td></tr>
+  </table>
+  <p class="aside">规则定义在 <code>server/src/domain/stale.ts</code>。</p>
+</section>
+
+<!-- 附：参考资料 -->
+<section id="refs">
+  <div class="eyebrow">APPENDIX · REFERENCES</div>
+  <h2>参考资料</h2>
+  <ul class="plain">
+    <li><a href="https://developers.openai.com/api/docs/guides/image-prompting">OpenAI · Image prompting guide</a></li>
+    <li><a href="https://vrfi1sk8a0.feishu.cn/wiki/FIWjwgL33ipnkekzk30crmKUnIh">MiniMax · H3 使用手册</a></li>
+    <li><a href="https://docs.volcengine.com/docs/ark/seedance-2-5-prompt-guide">火山方舟 · Seedance 2.5 提示词指南</a></li>
+  </ul>
+</section>
+
+</div></main>
+
+<script>
+const links=[...document.querySelectorAll('nav a')];
+const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+const narrow=matchMedia('(max-width:860px)');
+let current=-1;
+const spy=()=>{let i=0;secs.forEach((s,k)=>{if(s&&s.getBoundingClientRect().top<140)i=k});
+  if(i===current)return;current=i;
+  links.forEach((a,k)=>a.classList.toggle('on',k===i));
+  if(narrow.matches)links[i].scrollIntoView({block:'nearest',inline:'center'})};
+addEventListener('scroll',spy,{passive:true});spy();
+</script>
+</body>
+</html>
