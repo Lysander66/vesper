@@ -260,6 +260,17 @@ describe('节拍', () => {
     expect(beatsPrompt(BEATS)).toContain('没人开口的动作段写成不带台词的 scene')
   })
 
+  // 统称派给具名人物，这个人就会出现在他不该在的场面里。
+  test('原文统称说的话照统称写，不派给具名人物', () => {
+    expect(beatsPrompt(BEATS)).toContain('照统称写，不要派给某个有名字的人')
+  })
+
+  // 名著改编时把文言对白改成白话，最出彩的原句就没了。
+  test('原文对白照原句用，只截取或删句，不改措辞', () => {
+    expect(beatsPrompt(BEATS)).toContain('原文里人物说过的话照原句用')
+    expect(beatsPrompt(BEATS)).not.toContain('不要书面语长句')
+  })
+
   // 末句是代码定位原文区间的依据，必须逐字抄。
   test('每拍逐字抄末句，供代码定位这一拍的原文段', () => {
     expect(beatsPrompt(BEATS)).toContain('ends_with')

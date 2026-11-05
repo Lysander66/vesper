@@ -18,7 +18,7 @@ python3 .agents/skills/chapter-to-episode/api.py POST /api/sources/<id>/plan '{"
 
 ## 1. 预检
 
-`GET /api/bindings` 要有 `text`、`image`、`video`、`tts` 四个角色，缺哪个就停下告诉用户去设置页配置。
+`GET /api/bindings` 要有 `text`、`image`、`video` 三个角色；配音方式为 `separate` 时还要有 `tts`，`native` 由视频模型直接出声，不需要。缺哪个就停下告诉用户去设置页配置。
 
 ## 2. 导入
 
@@ -29,6 +29,8 @@ python3 .agents/skills/chapter-to-episode/api.py import <txt 路径> [作品名]
 返回的作品里记下 `project.id` 和 `sources[0].id`。一个 txt 是一份原文，不自动按章切。
 
 用户启动时说了画幅（`aspect`：`16:9` / `9:16`）、配音方式（`audio_mode`：`native` / `separate`）等，用 `PATCH /api/projects/<id>` 写进去；没说就用默认值。
+
+生成并发数在这一步问用户一次，没说就用 3：视频端点对同时进行的任务有限额，超了会排队或报错，3 路在常见限额内又能明显缩短整集耗时。
 
 单集目标时长（`target_seconds`）没有默认值，每部作品问一次：用户没说时，按原文的台词量与情节段落估一个建议值请用户确认。单镜时长（`shot_min_seconds` / `shot_max_seconds`）取视频端点支持的最短一档起，MiniMax H3 为 4–5 秒：视频生成多长就用多长，没有剪辑这一步。
 
@@ -54,6 +56,8 @@ bun -e "import {stylePresetOf} from './shared/src/styles'; console.log(stylePres
 
 每集依次 `POST /api/episodes/<id>/beats`，再 `POST /api/episodes/<id>/beats/confirm`。同一集不能并发，不同集可以。
 
+确认前按台词量和拍数估一下放不放得进 `target_seconds`。偏满时停下问用户：放宽时长，还是删次要情节或台词，并给出建议和理由，说清各自删什么、加多少秒。不要自己判断"还能装下"就往下走：拆分镜时塞不下，只能硬压或截断。
+
 ## 6. 资产
 
 `POST /api/projects/<id>/assets/extract {"source_ids": ["<source id>"]}`。放在节拍确认之后，提取时才看得到节拍里开口的人。
@@ -70,6 +74,9 @@ bun -e "import {stylePresetOf} from './shared/src/styles'; console.log(stylePres
 
 1. 先给主角和主要场景各出一张（`POST /api/assets/<id>/looks`），给用户看画风与人物，认可了再 `POST /api/projects/<id>/looks` 补其余
 2. `POST /api/projects/<id>/assets/lock`：没有图的资产会被跳过，返回的 `skipped` 不为 0 时要查出是哪几个并报给用户
+3. 锁定前对照全部人物参考图，看主角能否一眼和同场的人分开（配色、形制），身份与形象是否相符；有问题这时改，不要等出了视频再改
+
+分镜之后再改资产：`POST /api/assets/<id>/unlock` → 改 → 重出图 → `POST /api/assets/<id>/lock` → **`POST /api/assets/<id>/follow`**。分镜钉在拆分镜时的锁定版本上，不调 follow 就重做，出来的还是旧形象。follow 会把受影响的镜标成过时，先重做一镜、亲眼确认新形象出现了，再批量往下做。
 
 ## 9. 分镜
 
@@ -107,10 +114,11 @@ bun -e "import {stylePresetOf} from './shared/src/styles'; console.log(stylePres
 
 1. 按镜头顺序，每镜 `POST /api/shots/<id>/produce`：这一镜还没有提示词时先现写，再出首帧（参考图模式跳过）、视频
 2. 第一镜先只写提示词（`POST /api/shots/<id>/polish`）给用户看，认可了再出图出视频；开头几镜做完再停一次，画风、人物、台词认可了再往下；之后每做完一场报一次
-3. 某镜不满意就改这一镜的提示词重出，不往后推
-4. 每镜任务跑起来时告诉用户在做第几镜、做到哪一步；界面顶栏「任务」里能看到进度
-5. 报错写着「内容审核拒绝」时不原样重试，按这个顺序换：先查这一镜的提示词、资产名与锚点里有没有血腥、武器伤人、军事行动这类字眼（正面反面都算，「无血迹」也会被拒），改成动作、反应与光影的写法后重出；还被拒，首帧改用参考图模式（`PATCH /api/shots/<id> {"clip_source":"reference"}`）或换绑图像端点。改了哪几个词、换了什么，在汇报里写明
-6. 用户要连续看已出的几镜，指给用户集页面的「分镜」页签
+3. 开头几镜认可后，其余镜按用户定的并发数并行跑，每路一个 `POST /api/shots/<id>/produce`。会接上一镜末帧的镜必须等上一镜视频出来再跑：作品 `continuity_mode` 为 `chain`、这一镜 `join_mode` 为 `continue`、且与上一镜是同一场景。把这样连着的几镜编成一条链，链内串行，链与链、单镜之间并行。网络类报错（连接中断、超时、5xx）重试一次，其他报错停下这一路并报给用户
+4. 某镜不满意就改这一镜的提示词重出，不往后推
+5. 每镜任务跑起来时告诉用户在做第几镜、做到哪一步；界面顶栏「任务」里能看到进度
+6. 报错写着「内容审核拒绝」时不原样重试，按这个顺序换：先查这一镜的提示词、资产名与锚点里有没有血腥、武器伤人、军事行动这类字眼（正面反面都算，「无血迹」也会被拒），改成动作、反应与光影的写法后重出；还被拒，首帧改用参考图模式（`PATCH /api/shots/<id> {"clip_source":"reference"}`）或换绑图像端点。改了哪几个词、换了什么，在汇报里写明
+7. 用户要连续看已出的几镜，指给用户集页面的「分镜」页签
 
 ## 13. 合成与停点 3
 

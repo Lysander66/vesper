@@ -6,9 +6,11 @@
 
 <p align="center"><b>Chapters in, episodes out.</b></p>
 
-<p align="center">A local workflow that turns novel chapters into AI short drama episodes.</p>
+<p align="center">A local workflow that turns novels into AI dramas.</p>
 
 <p align="center"><sub>「东有启明，西有长庚」——《诗经·小雅·大东》。拉丁语叫 Vesper；也谐音「长更」，长期更新。</sub></p>
+
+<p align="center"><img src="docs/hero.jpg" width="900" alt="One sentence to an agent, one episode out"></p>
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License"></a>
@@ -17,7 +19,7 @@
 
 <p align="center">English · <a href="./README.zh-CN.md">中文</a></p>
 
-<!-- TODO(Lysander): demo video goes here once a public-domain sample episode is recorded -->
+<p align="center"><a href="https://www.bilibili.com/video/BV1X54b6zEBn"><img src="docs/demo-huarongdao.jpg" width="640" alt="Sample episode: Huarong Trail"></a><br><sub>Sample episode: <i>Romance of the Three Kingdoms</i>, Huarong Trail · 38 shots, about 4 minutes · <a href="https://www.bilibili.com/video/BV1X54b6zEBn">watch on Bilibili</a> · <a href="https://www.bilibili.com/video/BV1mt4h6BEXK">how it was made</a></sub></p>
 
 ## Highlights
 
@@ -69,10 +71,10 @@ Exported cURL commands read the API key from `$VESPER_API_KEY`.
 The repo ships agent skills under [`.agents/skills`](./.agents/skills), usable from [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex), [pi](https://pi.dev), or any agent that reads that directory. With the server running, hand the agent a chapter:
 
 ```
-Make the first episode from ~/novels/chapter-1.txt
+Make the first episode from examples/三国演义-草船借箭.txt
 ```
 
-It imports the text and runs the whole pipeline, pausing for your review once assets are extracted, before any video is generated, and after the first episode is assembled.
+It imports the text and runs the whole pipeline, pausing for your sign-off three times: when the reference sheets are ready to lock, when the storyboard review comes back, and when the first few sample shots are done.
 
 ## Contributing
 

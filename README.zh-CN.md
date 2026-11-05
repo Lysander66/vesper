@@ -6,9 +6,11 @@
 
 <p align="center"><b>原文进，成片出。</b></p>
 
-<p align="center">把小说章节做成短剧的本地工作流。</p>
+<p align="center">把小说做成 AI 短剧的本地工作流。</p>
 
 <p align="center"><sub>「东有启明，西有长庚」——《诗经·小雅·大东》。拉丁语叫 Vesper；也谐音「长更」，长期更新。</sub></p>
+
+<p align="center"><img src="docs/hero.jpg" width="900" alt="一句话交给 agent，得到一集短剧"></p>
 
 <p align="center">
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License"></a>
@@ -17,7 +19,7 @@
 
 <p align="center"><a href="./README.md">English</a> · 中文</p>
 
-<!-- TODO(Lysander): 用公有领域的文本做一集演示，录好后放在这里 -->
+<p align="center"><a href="https://www.bilibili.com/video/BV1X54b6zEBn"><img src="docs/demo-huarongdao.jpg" width="640" alt="示例作品：《三国演义》华容道"></a><br><sub>示例作品：《三国演义》华容道 · 38 镜，约 4 分钟 · <a href="https://www.bilibili.com/video/BV1X54b6zEBn">在 B 站观看</a> · <a href="https://www.bilibili.com/video/BV1mt4h6BEXK">制作过程</a></sub></p>
 
 ## 特点
 
@@ -69,10 +71,10 @@ bun run dev:web
 仓库在 [`.agents/skills`](./.agents/skills) 下自带 skill，[Claude Code](https://claude.com/claude-code)、[Codex](https://openai.com/codex)、[pi](https://pi.dev) 等读取该目录的 agent 都能用。服务启动后，把一章交给 agent：
 
 ```
-把 ~/novels/第1章.txt 做成第一集
+把 examples/三国演义-草船借箭.txt 做成第一集
 ```
 
-它会导入原文并跑完整条流水线，在资产提取后、生成视频前、第一集合成后三处停下，等你确认。
+它会导入原文并跑完整条流水线，在设定图定稿、分镜审查、样片验收三处停下，等你确认。
 
 ## 参与贡献
 
