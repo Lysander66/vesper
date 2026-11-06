@@ -2,13 +2,14 @@
 
 import { ASSET_FILE_ROLES, CAMERA_MOVES, CLIP_SOURCES, SHOT_JOINS, SHOT_SIZES, SHOT_SIZE_LABEL, type AssetCategory, type AssetFileRole, type Beat, type ShotRef, type Utterance } from '@vesper/shared'
 
-import { argsFor, effectiveAudioMode, generateText, type GenContext } from './gen'
+import { argsFor, effectiveAudioMode, generateText, maxDuration, roleCapabilities, type GenContext } from './gen'
 import { parseReply, z } from './reply'
 import { BEATS_SYSTEM, SHOTS_SYSTEM, beatsPrompt, shotsPrompt } from './prompts'
 import { locateAnchors } from '../domain/anchor'
-import { fitSeconds, parseBeats, soleSpeaker, speakersOf } from '../domain/beats'
+import { fitSeconds, overlongShots, parseBeats, soleSpeaker, speakersOf, utteranceTexts } from '../domain/beats'
 import { REFERENCE_ROLES, characterIn, dataOf, getAssetVersion, latestVersionOf, listAssets } from '../repo/assets'
 import { Conflict } from '../domain/errors'
+import { speechSeconds } from '../domain/pacing'
 import { episodeTitle, getProject, setEpisodeBeats, shotSecondsOf, type EpisodeRow } from '../repo/projects'
 import { appendEvent } from '../repo/runs'
 import { replaceShots, type ShotDraft } from '../repo/shots'
@@ -124,7 +125,7 @@ export async function writeBeats(ctx: GenContext, episode: EpisodeRow): Promise<
     appendEvent(ctx.db, ctx.runId, {
       type: 'note',
       level: 'warn',
-      message: `部分节拍未能在原文中定位，逐镜精写时将缺少对应原文：${located.reasons.join('；')}`,
+      message: `部分节拍未能在原文中定位，写分镜提示词时将缺少对应原文：${located.reasons.join('；')}`,
     })
   }
 
@@ -189,6 +190,8 @@ export async function splitShots(ctx: GenContext, episode: EpisodeRow): Promise<
   const props = lockedAssets(ctx, episode.project_id, 'prop')
 
   const bounds = shotSecondsOf(project)
+  const limit = speechLimit(ctx, bounds.max)
+  assertUtterancesFit(beats, project.speech_rate, limit)
   // 附上每拍对应的原文，拆几镜要看原文里的动作；定位失败的节拍只给梗概。
   const source = episodeText(ctx.db, episode)
   const beatsWithSource = beats.map((beat) => ({
@@ -198,14 +201,14 @@ export async function splitShots(ctx: GenContext, episode: EpisodeRow): Promise<
         ? source.slice(beat.source_start, beat.source_end)
         : '',
   }))
-  // 按实际音轨模式拆：单独配音时一镜只能有一个说话人。
+  // 按实际声音来源拆：单独配音时一镜只能有一个说话人。
   const audio = effectiveAudioMode(ctx.db, ctx.projectId, project.audio_mode)
 
   // 一拍一次请求，格式出错只重拆这一拍；每拍带上前一拍的最后一镜衔接。
   const replies: (z.infer<typeof shotsSchema>['shots'][number] & { beat_index: number })[] = []
   for (const [focus, beat] of beatsWithSource.entries()) {
     const last = replies.at(-1)
-    const prompt = shotsPrompt(
+    const promptFor = (overlong: readonly string[]) => shotsPrompt(
       {
         beats: beatsWithSource,
         cast: cast.map((c) => ({ name: c.name, identity: c.identity, looks: c.looks, outfit: costumed(cast, c) ? c.outfit : '' })),
@@ -219,10 +222,21 @@ export async function splitShots(ctx: GenContext, episode: EpisodeRow): Promise<
         audioMode: audio,
         focus,
         previous: last === undefined ? null : { summary: last.summary, shotSize: SHOT_SIZE_LABEL[enumOf(SHOT_SIZES, last.shot_size, 'medium', new Set(), 'shot_size')], camera: last.camera, scene: last.scene_ref },
+        overlong,
       },
       argsFor(ctx, 'shots'),
     )
-    const reply = await splitBeat(ctx, episode, focus, beat.summary, prompt)
+    const overlongOf = (shots: z.infer<typeof shotsSchema>['shots']) =>
+      overlongShots(shots.map((shot) => utteranceTexts(shot.utterance_indexes.flatMap((at) => beat.utterances[at] ?? []))), project.speech_rate, limit.seconds)
+        .map(({ index, seconds }) => `第 ${index + 1} 镜的台词念完约 ${seconds.toFixed(1)} 秒，${limit.label} ${limit.seconds} 秒`)
+    const ask = (prompt: string) => generateText(ctx, {
+      owner: { kind: 'episode', id: episode.id },
+      purpose: 'shots',
+      label: `第 ${episode.idx + 1} 集分镜（节拍 ${focus + 1}）`,
+      params: { system: SHOTS_SYSTEM, prompt },
+    }).then((result) => result.text)
+    const warn = (message: string) => appendEvent(ctx.db, ctx.runId, { type: 'note', level: 'warn', message })
+    const reply = await splitBeat(ask, warn, focus, beat.summary, promptFor, overlongOf)
     replies.push(...reply.shots.map((shot) => ({ ...shot, beat_index: focus })))
   }
 
@@ -339,21 +353,44 @@ export async function splitShots(ctx: GenContext, episode: EpisodeRow): Promise<
   }
 }
 
-/** 回复解析失败时同一拍重问一次。 */
-async function splitBeat(ctx: GenContext, episode: EpisodeRow, focus: number, summary: string, prompt: string): Promise<z.infer<typeof shotsSchema>> {
+/** 一镜台词最多能念多久：视频端点单次最长的秒数，还没配置视频端点时按作品的单镜上限。 */
+function speechLimit(ctx: GenContext, fallback: number): { seconds: number; label: string } {
+  try {
+    const seconds = maxDuration(roleCapabilities(ctx, 'video'))
+    if (seconds !== undefined) return { seconds, label: '视频模型单次最长' }
+  } catch (error) {
+    if (!(error instanceof Conflict)) throw error
+  }
+  return { seconds: fallback, label: '单镜最长' }
+}
+
+/** 单句台词就超过上限时拆镜也念不完，只能回叙事节拍改。 */
+export function assertUtterancesFit(beats: readonly Beat[], speechRate: number, limit: { seconds: number; label: string }): void {
+  const tooLong = beats.flatMap((beat, i) =>
+    beat.utterances
+      .filter((line) => speechSeconds([line.text], speechRate) > limit.seconds)
+      .map((line) => `节拍 ${i + 1} 的「${line.text.slice(0, 12)}」`),
+  )
+  if (tooLong.length > 0) throw new Conflict(`这些台词一句就超过${limit.label} ${limit.seconds} 秒，拆镜也念不完：${tooLong.join('、')}。请在叙事节拍里改短或拆成几句`)
+}
+
+/** 解析失败或有镜头台词念不完时，重拆这一拍一次。 */
+export async function splitBeat(ask: (prompt: string) => Promise<string>, warn: (message: string) => void, focus: number, summary: string, promptFor: (overlong: readonly string[]) => string, overlongOf: (shots: z.infer<typeof shotsSchema>['shots']) => string[]): Promise<z.infer<typeof shotsSchema>> {
+  let overlong: string[] = []
   for (let attempt = 1; ; attempt++) {
-    const { text } = await generateText(ctx, {
-      owner: { kind: 'episode', id: episode.id },
-      purpose: 'shots',
-      label: `第 ${episode.idx + 1} 集分镜（节拍 ${focus + 1}）`,
-      params: { system: SHOTS_SYSTEM, prompt },
-    })
+    const text = await ask(promptFor(overlong))
+    let reply: z.infer<typeof shotsSchema>
     try {
-      return parseReply(text, shotsSchema, `拆分镜（节拍 ${focus + 1}）`)
+      reply = parseReply(text, shotsSchema, `拆分镜（节拍 ${focus + 1}）`)
     } catch (error) {
       if (attempt >= 2) throw error
-      appendEvent(ctx.db, ctx.runId, { type: 'note', level: 'warn', message: `节拍 ${focus + 1}「${summary.slice(0, 20)}」的回复解析失败，重拆这一拍` })
+      warn(`节拍 ${focus + 1}「${summary.slice(0, 20)}」的回复解析失败，重拆这一拍`)
+      continue
     }
+    overlong = overlongOf(reply.shots)
+    if (overlong.length === 0) return reply
+    if (attempt >= 2) throw new Conflict(`节拍 ${focus + 1} 重拆后仍有镜头的台词念不完：${overlong.join('；')}`)
+    warn(`节拍 ${focus + 1}「${summary.slice(0, 20)}」有镜头的台词念不完，重拆这一拍`)
   }
 }
 
@@ -402,7 +439,7 @@ interface LockedAsset {
   readonly aliases: readonly string[]
   /** 角色的身份与关系，其他类别为空串。 */
   readonly identity: string
-  /** 锁定版里能当参考图的图位，拆分镜时只能从中挑。 */
+  /** 锁定版里能当参考图的设定图类型，拆分镜时只能从中挑。 */
   readonly looks: readonly AssetFileRole[]
   /** 角色的着装，其他类别为空串。 */
   readonly outfit: string

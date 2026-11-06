@@ -52,7 +52,7 @@ export function query(root: unknown, path: string): unknown[] {
   return cursor
 }
 
-/** 按候选顺序取第一个非空值：同一家的成功、排队与错误响应常把同一条信息放在不同路径上。 */
+/** 按候选顺序取第一个非空值：同一供应商的成功、排队与错误响应常把同一条信息放在不同路径上。 */
 export function extractFirst(root: unknown, paths: readonly string[]): unknown {
   for (const path of paths) {
     for (const hit of query(root, path)) {

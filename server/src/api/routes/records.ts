@@ -1,5 +1,3 @@
-/** 任务流与记录：run 的订阅与取消，以及调用记录、本地命令的查询。 */
-
 import type { OwnerKind } from '@vesper/shared'
 
 import type { Database } from 'bun:sqlite'

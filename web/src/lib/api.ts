@@ -81,7 +81,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   if (!response.ok) {
     const detail = (data as { error?: string } | null)?.error
-    throw new ApiError(detail ?? `服务端出错了（${response.status}）`, response.status)
+    throw new ApiError(detail ?? `服务端错误（${response.status}）`, response.status)
   }
   return data as T
 }

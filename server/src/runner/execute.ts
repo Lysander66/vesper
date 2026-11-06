@@ -1,4 +1,4 @@
-/** 一次生成的提交、轮询、取件与下载，每次往返都记一条 `http_calls`。上下文全从库里读，首跑与重启续跑走同一条路径。 */
+/** 一次生成的提交、轮询、取结果与下载，每次往返都记一条 `http_calls`。上下文全从库里读，首跑与重启续跑走同一条路径。 */
 
 import type { CallSection, JobStatus } from '@vesper/shared'
 
@@ -203,7 +203,7 @@ export async function executeJob(db: Database, jobId: string, options: RunnerOpt
       if (!request) throw new Error('端点定义缺少 result 节')
       const outcome = await roundTrip('result', request, { timeoutMs: policy.requestTimeoutMs })
       if (!isOk(outcome)) {
-        return finish('failed', describeFailure('取件', outcome, definition.result.extract))
+        return finish('failed', describeFailure('取结果', outcome, definition.result.extract))
       }
       extracted = { ...extracted, ...extractAll(outcome.responseBody, definition.result.extract) }
     }
@@ -218,7 +218,7 @@ export async function executeJob(db: Database, jobId: string, options: RunnerOpt
         emit({ jobId, phase: 'finished', status: 'succeeded' })
         return { status: 'succeeded', artifacts: [], extracted, providerTaskId: taskId }
       }
-      // 有的家业务失败也回 200，原因在错误字段里。
+      // 有的供应商业务失败也回 200，原因在错误字段里。
       const reason = errorText(extracted)
       return finish(
         'failed',

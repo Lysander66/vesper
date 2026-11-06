@@ -1,5 +1,3 @@
-/** 叙事节拍与台词的解析和校验。 */
-
 import { speechSeconds } from './pacing'
 import type { Beat, Utterance } from '@vesper/shared'
 
@@ -38,7 +36,7 @@ export function speakersOf(utterances: readonly Utterance[]): string[] {
   return [...new Set(spoken.map((line) => line.speaker).filter((name): name is string => !!name))]
 }
 
-/** 一镜唯一的说话人，分离配音时用。没有台词回 undefined，只有旁白回 null，多于一人抛错。 */
+/** 一镜唯一的说话人，单独配音时用。没有台词回 undefined，只有旁白回 null，多于一人抛错。 */
 export function soleSpeaker(utterances: readonly Utterance[]): string | null | undefined {
   const spoken = utterances.filter((line) => line.text.trim() !== '')
   if (spoken.length === 0) return undefined
@@ -51,6 +49,14 @@ export function soleSpeaker(utterances: readonly Utterance[]): string | null | u
 
 export function utteranceTexts(utterances: readonly Utterance[]): string[] {
   return utterances.map((line) => line.text).filter((text) => text.trim() !== '')
+}
+
+/** 台词在 limit 秒内念不完的镜头，按下标给出念完要多久。 */
+export function overlongShots(shots: readonly (readonly string[])[], speechRate: number, limit: number): { index: number; seconds: number }[] {
+  return shots.flatMap((texts, index) => {
+    const seconds = speechSeconds(texts, speechRate)
+    return seconds > limit ? [{ index, seconds }] : []
+  })
 }
 
 /** 夹到时长区间内。台词念不完时抬高下界，可以超过 max。 */

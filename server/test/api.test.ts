@@ -115,7 +115,7 @@ describe('凭证', () => {
 })
 
 describe('导出请求 JSON', () => {
-  test('落到数据目录，凭证仍是打码值', async () => {
+  test('落到数据目录，凭证仍是脱敏后的值', async () => {
     const now = new Date().toISOString()
     db.query('INSERT INTO endpoints VALUES (?, ?, ?, ?, ?, ?)').run('ep-1', 'H3', 'video', '{}', now, now)
     db.query('INSERT INTO credentials (id, name, base_url, api_key, created_at) VALUES (?, ?, ?, ?, ?)').run('cr-1', 'minimax', 'https://x', 'sk-secret-value-1234', now)
@@ -166,7 +166,7 @@ describe('素材库', () => {
     return id
   }
 
-  test('存入只带每个图位在用的那张，作品资产列表不含库里的', async () => {
+  test('存入只带每种设定图类型在用的那张，作品资产列表不含库里的', async () => {
     const { projectId } = await newProject()
     const assetId = await withLook(projectId)
 

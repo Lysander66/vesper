@@ -1,6 +1,5 @@
-/** 全库主键的生成。放在 db 层，records 与 command 也要发 ID。 */
+/** 放在 db 层：records 与 command 也要生成 ID。 */
 
-/** 每张表一个前缀。 */
 export type IdPrefix =
   | 'proj'
   | 'src'

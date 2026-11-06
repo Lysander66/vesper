@@ -42,7 +42,7 @@ const SHOT_FIELD_IMPACT: Readonly<Record<string, ArtifactKind>> = {
   seconds: 'film',
 }
 
-/** 原生音轨下台词、声音段与秒数都进视频请求，从视频起算过时。 */
+/** 视频自带声音时台词、声音段与秒数都进视频请求，从视频起算过时。 */
 const NATIVE_FIELD_IMPACT: Readonly<Record<string, ArtifactKind>> = { ...SHOT_FIELD_IMPACT, utterances: 'clip', seconds: 'clip', sound: 'clip' }
 
 export function impactOfShotFields(fields: Iterable<string>, audio: AudioMode): ArtifactKind[] {
@@ -62,11 +62,11 @@ export interface VersionContent {
   readonly files: readonly { readonly role: string; readonly path: string }[]
 }
 
-/** 镜头换挂同一资产的另一版后，从哪一件起过时；没有影响回 null。音色样本只在原生音轨的参考图模式下发出。 */
+/** 镜头换挂同一资产的另一版后，从哪一件起过时；没有影响回 null。音色样本只在视频自带声音且用参考图模式时发出。 */
 export function impactOfVersionSwap(before: VersionContent, after: VersionContent, audio: AudioMode, clipSource: ClipSource): ArtifactKind | null {
   const picture = (version: VersionContent) => JSON.stringify([{ ...version.data, voice: undefined }, version.files.filter((f) => f.role !== 'voice_sample').map((f) => [f.role, f.path])])
   const voice = (version: VersionContent) => String((version.data as { voice?: unknown }).voice ?? '')
-  // 快照里同一角色位新的在前，第一条是选定的样本。
+  // 快照里同一类型新的在前，第一条是选定的样本。
   const sample = (version: VersionContent) => version.files.find((f) => f.role === 'voice_sample')?.path ?? null
   if (picture(before) !== picture(after)) return 'first_frame'
   const sampleUsed = audio === 'native' && clipSource === 'reference'

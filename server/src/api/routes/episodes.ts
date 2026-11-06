@@ -1,5 +1,3 @@
-/** 单集：节拍、分镜、整集生成与合成。 */
-
 import type { Database } from 'bun:sqlite'
 
 import type { Review, ShotInsertView } from '@vesper/shared'

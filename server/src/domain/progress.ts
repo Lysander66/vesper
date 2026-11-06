@@ -46,7 +46,7 @@ export function shotProgress(shot: ShotView, audio: AudioMode): ShotProgress {
 }
 
 function slotStatus(shot: ShotView, kind: ArtifactKind, audio: AudioMode): SlotStatus {
-  // 原生音轨下声音在视频里，配音位不算缺失。
+  // 视频自带声音时，配音位不算缺失。
   if (kind === 'voice' && (audio === 'native' || utteranceTexts(shot.utterances).length === 0)) return 'skipped'
   if (kind === 'first_frame' && shot.clipSource === 'reference') return 'skipped'
 

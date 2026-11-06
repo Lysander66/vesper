@@ -39,7 +39,7 @@ export const PRICES: Readonly<Record<string, Price>> = {
   },
 }
 
-/** `bodies` 是各次往返的响应体，按先后排；响应没回型号时用 `model`。 */
+/** `bodies` 是各次往返的响应体，按先后排；响应没回模型名时用 `model`。 */
 export function readUsage(kind: EndpointKind, model: string, bodies: readonly unknown[]): Usage | null {
   if (kind === 'text') return readTokens(model, bodies)
   if (kind === 'image') return readImage(model, bodies)
@@ -49,7 +49,7 @@ export function readUsage(kind: EndpointKind, model: string, bodies: readonly un
 
 /** 价目表里没有这个模型、或视频分辨率没有单价时回 null。 */
 export function priceUsage(usage: Usage): Money | null {
-  // 响应里的型号可能带发布日期后缀，如 claude-opus-5-5-20260301。
+  // 响应里的模型名可能带发布日期后缀，如 claude-opus-5-5-20260301。
   const price = PRICES[usage.model] ?? PRICES[usage.model.replace(/-\d{8}$/, '')]
   if (!price || price.kind !== usage.kind) return null
 

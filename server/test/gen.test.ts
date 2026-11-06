@@ -5,7 +5,7 @@ import type { Database } from 'bun:sqlite'
 
 import { loadJob } from '../src/db/records'
 import { openDatabase } from '../src/db/schema'
-import { GenFailure, generate, isModerationRejection, type GenContext } from '../src/pipeline/gen'
+import { GenFailure, generate, isModerationRejection, maxDuration, type GenContext } from '../src/pipeline/gen'
 import { createCredential, upsertBinding, upsertEndpoint } from '../src/repo/catalog'
 import { createProject } from '../src/repo/projects'
 import { startRun } from '../src/repo/runs'
@@ -60,9 +60,18 @@ describe('参数合并', () => {
 })
 
 describe('审核拒绝的识别', () => {
-  test('识别各家的审核拒绝，普通网络错误不算', () => {
+  test('识别各供应商的审核拒绝，普通网络错误不算', () => {
     expect(isModerationRejection('提交失败：HTTP 400 Bad Request — Your request was rejected by the safety system.')).toBe(true)
     expect(isModerationRejection('提交失败：输入内容涉及敏感信息')).toBe(true)
     expect(isModerationRejection('提交失败：TypeError: ECONNRESET')).toBe(false)
+  })
+})
+
+describe('端点单次最长时长', () => {
+  test('区间取上限，档位取最大一档，不接受时长时没有上限', () => {
+    expect(maxDuration({ durations: { min: 4, max: 15 } })).toBe(15)
+    expect(maxDuration({ durations: [10, 5] })).toBe(10)
+    expect(maxDuration({ durations: [] })).toBeUndefined()
+    expect(maxDuration({})).toBeUndefined()
   })
 })

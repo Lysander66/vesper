@@ -198,7 +198,7 @@ function VoiceSample({ asset, locked }: { asset: AssetView; locked: boolean }) {
             ) : (
               <Button size='sm' variant='ghost' className='-my-1 h-6 px-1.5 text-xs' disabled={locked || pick.isPending} onClick={() => pick.mutate(file.id)}>
                 <Check className='h-3.5 w-3.5' />
-                使用此音色
+                使用此试音
               </Button>
             )}
             <span className='truncate' title={file.label}>

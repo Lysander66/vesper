@@ -324,7 +324,7 @@ describe('参考图模式带哪几段音色样本', () => {
     expect(tooShort.voices.map((v) => v.name)).toEqual(['周岩'])
     expect(tooShort.voiceMisses).toEqual([{ name: '林小满', reason: '样本 1.0 秒，短于 2 秒' }])
     expect(plan(H3, { '/data/林小满-2.wav': 16, '/data/周岩.wav': 5 }).voices.map((v) => v.seconds)).toEqual([7.5, 5])
-    expect(plan({ ...H3, max_reference_audios: 1 }, SECONDS).voiceMisses).toEqual([{ name: '周岩', reason: '端点最多接 1 段' }])
+    expect(plan({ ...H3, max_reference_audios: 1 }, SECONDS).voiceMisses).toEqual([{ name: '周岩', reason: '接口最多接受 1 段' }])
     expect(plan(H3, {}).voiceMisses.map((m) => m.reason)).toEqual(['读不出样本时长', '读不出样本时长'])
   })
 })
@@ -371,7 +371,7 @@ describe('接哪一镜', () => {
     expect(chainsFrom(db, second!, 'cut')).toBeNull()
   })
 
-  /** 末帧在发起时从上一镜视频抽取，预览要与实发一致。 */
+  /** 末帧在发起时从上一镜视频抽取，预览要与实际发送一致。 */
   test('上一镜的视频文件不在时不接末帧，提示词与不接时相同', () => {
     const scene = lock('scene', '雪夜屋檐')
     const [first, second] = shotsOf(draft({ sceneRef: scene }), draft({ sceneRef: scene }))
@@ -435,7 +435,7 @@ describe('改写过的提示词', () => {
     expect(preview.clip).toContain('缓缓抬头')
   })
 
-  test('设定图按图位改写，改一张不影响其余', () => {
+  test('设定图按类型改写，改一张不影响其余', () => {
     const id = createAsset(db, { projectId, category: 'character', name: '林小满', data: { tier: 'lead' } })
 
     const preview = assetPreview(db, id, { promptText: { look_portrait: '只要一张脸' } })

@@ -29,6 +29,6 @@ export function setBinding(db: Database, projectId: string | null, role: Binding
 export function resolveBinding(db: Database, projectId: string, role: BindingRole): Binding {
   const own = PER_PROJECT_ROLES.includes(role) ? findBinding(db, projectId, role) : null
   const binding = own ?? findBinding(db, null, role)
-  if (!binding) throw new Conflict(`「${BINDING_ROLE_LABEL[role]}」尚未配置调用方式，请先在设置中配置`)
+  if (!binding) throw new Conflict(`「${BINDING_ROLE_LABEL[role]}」尚未配置接口，请先在设置中配置`)
   return binding
 }

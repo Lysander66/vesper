@@ -7,7 +7,7 @@
     "docs": "https://platform.minimax.cn/docs/api-reference/video-generation-v2-create",
     "preferred": "yes",
     "hints": { "base_url": "https://api.minimax.cn" },
-    "notes": "档位名大小写敏感，enum_maps 负责把界面上的写法翻成接口要的那种。首帧与参考图互斥，一次只发一种；参考图接口收 9 张，5 张以内输入不计费，所以上限写 5。参考音频也与首帧互斥，只在参考图模式下带角色的音色样本。"
+    "notes": "档位名大小写敏感，enum_maps 负责把界面上的写法翻成接口要的那种。首帧与参考图互斥，一次只发一种；参考图接口接受 9 张，5 张以内输入不计费，所以上限写 5。参考音频也与首帧互斥，只在参考图模式下带角色的音色样本。"
   },
   "auth": {
     "headers": { "Authorization": "Bearer {{ api_key }}" }

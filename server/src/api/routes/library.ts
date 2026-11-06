@@ -1,5 +1,3 @@
-/** 素材库：从作品存入、复制到作品、删除。 */
-
 import type { Database } from 'bun:sqlite'
 
 import { body, json, optionalBody, z, type Register } from '../http'

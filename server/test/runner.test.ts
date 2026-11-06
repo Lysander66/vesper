@@ -118,7 +118,7 @@ afterEach(() => {
   mock.server.stop(true)
 })
 
-describe('落库与实发', () => {
+describe('落库与实际发送', () => {
   test('落库的是素材引用，发出的是 base64', async () => {
     const jobId = await seedJob()
     await run(jobId)

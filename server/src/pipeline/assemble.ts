@@ -42,7 +42,7 @@ export async function assembleEpisode(ctx: GenContext, episode: EpisodeRow, opti
     if (!video) throw new Conflict(`第 ${shot.idx + 1} 镜没有视频`)
     const seconds = await clipSeconds(video)
     const fadeIn = shot.join_mode === 'fade'
-    // 有配音就用配音：它反映这一镜生成时的实际音轨模式。
+    // 有配音就用配音：它反映这一镜生成时实际的声音来源。
     const audio = artifacts.find((a) => a.kind === 'voice')?.path
     const nativeAudio = !audio && audioMode === 'native'
     const source = audio ?? (nativeAudio ? video : undefined)

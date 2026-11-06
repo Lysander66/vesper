@@ -5,7 +5,7 @@ import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle } from '@
 
 const ARMED_MS = 3000
 
-/** 双击会连吃两下，等于没确认。 */
+/** 防止双击的第二下直接确认。 */
 const DEBOUNCE_MS = 300
 
 export function ConfirmButton({

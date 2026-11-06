@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 
-/** 素材来源名。流水线按这几个名字传，端点定义映射成各家的字段名。 */
+/** 素材来源名。流水线按这几个名字传，端点定义映射成各供应商的字段名。 */
 export const ASSET_SOURCES = ['start_image', 'reference_images', 'reference_audio_files'] as const
 export type AssetSource = (typeof ASSET_SOURCES)[number]
 
@@ -48,9 +48,9 @@ const capabilityFields = z.object({
   durations: z.union([z.array(z.number()), z.object({ min: z.number(), max: z.number() })]).optional(),
   resolutions: z.array(z.string()).optional(),
   aspect_ratios: z.array(z.string()).optional(),
-  /** 视频自带音轨，缺省不出声。合成时据此决定用哪一轨。 */
+  /** 视频自带声音，缺省不出声。合成时据此决定用哪一轨。 */
   audio: z.enum(['native']).optional(),
-  /** 视频提示词按 MiniMax H3 官方写法拼（https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing），缺省走通用写法。 */
+  /** 视频提示词按 MiniMax H3 官方写法拼，缺省用通用写法。 */
   prompt_style: z.enum(['h3']).optional(),
 })
 
@@ -66,7 +66,7 @@ export const endpointDefinitionSchema = z
         /** 这份定义依据的文档。 */
         docs: z.string().optional(),
         notes: z.string().optional(),
-        /** 同一产出下首选这条，设置页排在最前并预选。每个 modality 至多一条。 */
+        /** 同类端点中首选这条，设置页排在最前并预选。每个 modality 至多一条。 */
         preferred: z.literal('yes').optional(),
         /** 上一代接口，设置页排在最后。 */
         legacy: z.literal('yes').optional(),
@@ -85,7 +85,7 @@ export const endpointDefinitionSchema = z
     enum_maps: z.record(z.string(), z.record(z.string(), z.string())).optional(),
     defaults: z.record(z.string(), templateValue).optional(),
     submit: section,
-    /** 条件满足时整节代替 `submit`：有些家带图与不带图是两个接口。 */
+    /** 条件满足时整节代替 `submit`：有些供应商带图与不带图是两个接口。 */
     submit_alt: section.extend({ when: z.string().min(1) }).optional(),
     /** 缺省即同步端点：submit 的响应里就有产物地址，不轮询。 */
     poll: section.optional(),
@@ -96,7 +96,7 @@ export const endpointDefinitionSchema = z
       .extend({
         /** 验证过的模型，参数面板里的候选项，不限制填别的。 */
         models: z.array(z.string()).optional(),
-        /** 随型号变的档位，键是型号名。端点级写默认那款的档位。 */
+        /** 随模型变的档位，键是模型名。端点级写默认模型的档位。 */
         by_model: z.record(z.string(), capabilityFields).optional(),
       })
       .optional(),
@@ -127,7 +127,7 @@ export const endpointDefinitionSchema = z
         })
       }
     }
-    // 型号名写错时覆盖不会生效，在这里报错。
+    // 模型名写错时覆盖不会生效，在这里报错。
     for (const model of Object.keys(def.capabilities?.by_model ?? {})) {
       if (def.capabilities?.models?.includes(model)) continue
       ctx.addIssue({
@@ -162,7 +162,7 @@ export const endpointDefinitionSchema = z
       ctx.addIssue({
         code: 'custom',
         path: ['submit', 'response'],
-        message: 'submit 直接回二进制就意味着同步出件，不该再声明 poll',
+        message: 'submit 直接回二进制就意味着同步返回结果，不该再声明 poll',
       })
     }
   })

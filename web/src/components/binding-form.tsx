@@ -46,7 +46,7 @@ export function BindingForm({
   const save = useMutation({
     mutationFn: async () => {
       const id = fresh ? (await api.createCredential({ name, base_url: baseUrl, api_key: apiKey })).id : credentialId
-      // 其余端点参数（分辨率等）原样带回，换型号不该把它们抹掉。
+      // 换模型时其余参数（分辨率等）原样保留。
       const params = { ...current?.params }
       if (model) params.model = model
       else delete params.model
@@ -63,7 +63,7 @@ export function BindingForm({
   const pickEndpoint = (id: string) => {
     const picked = endpoints.find((endpoint) => endpoint.id === id)
     setEndpointId(id)
-    // 型号与 API 凭证都不跨端点通用：沿用上一家的会得到 400 或 401。
+    // 模型与 API 凭证都不跨端点通用，沿用上一个端点的会得到 400 或 401。
     setModel(modelOf(picked))
     setCredentialId(credentialsFor(credentials, picked?.definition)[0]?.id ?? '')
     setBaseUrl(picked?.definition.meta?.hints?.base_url ?? '')
@@ -76,10 +76,10 @@ export function BindingForm({
     <div className='space-y-3 border-b pb-4 last:border-0'>
       <p className='text-sm font-medium'>{BINDING_ROLE_LABEL[role]}</p>
 
-      <Field label='调用方式'>
+      <Field label='接口'>
         <Select value={endpointId} onValueChange={pickEndpoint}>
           <SelectTrigger className='w-full'>
-            <SelectValue placeholder='选择调用方式' />
+            <SelectValue placeholder='选择接口' />
           </SelectTrigger>
           <SelectContent>
             {endpoints.map((endpoint) => (
@@ -192,7 +192,7 @@ export function titleOf(endpoints: EndpointSummary[], id: string): string | unde
   return endpoints.find((endpoint) => endpoint.id === id)?.definition.meta?.title
 }
 
-/** 「跟随全局」不是存下来的值，而是没有本作品的绑定，所以选它即删除绑定。 */
+/** 「跟随默认」不是存下的值，而是本作品没有绑定，所以选它即删除绑定。 */
 export function EndpointPicker({ projectId, role, bindings, className }: { projectId: string; role: BindingRole; bindings: readonly Binding[]; className?: string }) {
   const queryClient = useQueryClient()
   const endpoints = useQuery({ queryKey: ['endpoints'], queryFn: api.endpoints })
@@ -249,7 +249,7 @@ export function EndpointPicker({ projectId, role, bindings, className }: { proje
 function BindingLine({ options, binding, inherited }: { options: EndpointSummary[]; binding: Binding | null; inherited: boolean }) {
   return (
     <span className='flex min-w-0 items-center gap-1.5'>
-      {inherited && <span className='shrink-0 text-ink3'>跟随全局 ·</span>}
+      {inherited && <span className='shrink-0 text-ink3'>跟随默认 ·</span>}
       <span className={cn('truncate', binding === null && 'text-ink3')}>{binding === null ? '未配置' : (titleOf(options, binding.endpoint_id) ?? binding.endpoint_name)}</span>
     </span>
   )

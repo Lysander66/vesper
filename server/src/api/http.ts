@@ -71,7 +71,7 @@ export function query(request: Request, name: string): string | undefined {
 
 export type Handler = (request: Request, params: Record<string, string>) => Response | Promise<Response>
 
-/** 各组路由登记接口用的函数。类型放这里，避免分组文件与 routes.ts 互相 import。 */
+/** 类型放这里，避免分组文件与 routes.ts 互相 import。 */
 export type Register = (method: string, pattern: string, handler: Handler) => void
 
 export { z }

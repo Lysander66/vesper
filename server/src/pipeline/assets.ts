@@ -72,7 +72,7 @@ function onScreenSpeakers(ctx: GenContext, projectId: string): string[] {
   return [...names]
 }
 
-/** 多份原文合成一次请求，同一角色才不会在每份里各建一次。 */
+/** 多份原文拼进一次请求，同一角色才不会在每份里各建一次。 */
 function joinSources(files: readonly SourceRow[]): string {
   if (files.length === 1) return files[0]!.text
   return files.map((file) => `【${file.name}】\n${file.text}`).join('\n\n')
@@ -153,7 +153,7 @@ export async function extractAssets(ctx: GenContext, project: ProjectRow, files:
   return { created, skipped, note }
 }
 
-/** 设定图按图位定画幅，不跟作品画幅。 */
+/** 设定图按设定图类型定画幅，不跟作品画幅。 */
 const LOOK_ASPECT: Readonly<Partial<Record<AssetFileRole, Aspect>>> = {
   full_body: '9:16',
   portrait: '9:16',

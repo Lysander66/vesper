@@ -6,7 +6,7 @@
     "title": "Seedream 图像生成",
     "docs": "https://docs.volcengine.com/docs/ark/image-generation-api",
     "hints": { "base_url": "https://ark.cn-beijing.volces.com" },
-    "notes": "同步接口，一次请求直接返图，没有任务可轮询。总像素下限高达 368 万，连 1500x1500 都会被拒，所以这里没有小尺寸可选。水印默认是开的，显式关掉。size 发像素而不发档位：档位模式要靠 prompt 里的自然语言描述宽高比，而画幅我们本来就是确定的。产出 URL 只活 24 小时。"
+    "notes": "同步接口，一次请求直接返图，没有任务可轮询。总像素下限高达 368 万，连 1500x1500 都会被拒，所以这里没有小尺寸可选。水印默认是开的，显式关掉。size 发像素而不发档位：档位模式要靠 prompt 里的自然语言描述宽高比，而画幅我们本来就是确定的。产出 URL 24 小时内有效。"
   },
   "auth": {
     "headers": { "Authorization": "Bearer {{ api_key }}" }

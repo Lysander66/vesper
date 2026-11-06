@@ -37,7 +37,7 @@ function ProjectPage() {
   if (!view.data) return <LoadingState />
   const { project } = view.data
 
-  // 同一路由换参数不会重挂，key 让各面板的草稿随作品一起换掉。
+  // 同一路由换参数不会重新挂载，key 让各面板的草稿随作品一起换掉。
   return (
     <div key={project.id} className='space-y-4'>
       <PageHeader

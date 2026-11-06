@@ -6,7 +6,7 @@
     "title": "Seedance 视频生成",
     "docs": "https://docs.volcengine.com/docs/ark/create-video-generation-task-api",
     "hints": { "base_url": "https://ark.cn-beijing.volces.com" },
-    "notes": "三款型号走同一个接口，只有档位不同：2.5 时长到 30 秒、没有 4K，且首帧任务只认 adaptive 画幅——指定具体比例会报错，所以它的 aspect_ratios 只留 adaptive，让项目画幅对不上、不发 ratio；2.0 系列时长到 15 秒、首帧可以指定画幅，其中 fast 只出到 720p。generate_audio 显式关掉，音轨走配音端点。"
+    "notes": "三个模型走同一个接口，只有档位不同：2.5 时长到 30 秒、没有 4K，且首帧任务只认 adaptive 画幅——指定具体比例会报错，所以它的 aspect_ratios 只留 adaptive，让作品画幅对不上、不发 ratio；2.0 系列时长到 15 秒、首帧可以指定画幅，其中 fast 只出到 720p。generate_audio 显式关掉，声音用单独配音。"
   },
   "auth": {
     "headers": { "Authorization": "Bearer {{ api_key }}" }

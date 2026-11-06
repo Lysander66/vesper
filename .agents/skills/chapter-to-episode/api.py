@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""调长庚 Vesper 后端。返回 202 的接口会跟着事件流等到任务结束，再打出 report。
+"""调长庚 Vesper 后端。返回 202 的接口会跟着事件流等到任务结束，再输出 report。
 
 用法：
   api.py GET  /api/projects/<id>

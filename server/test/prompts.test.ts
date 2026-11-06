@@ -143,7 +143,7 @@ describe('H3 视频提示词', () => {
     expect(prompt).toContain("青禾 (S1) says off-screen: <d>[Chinese] 回来</d> while the on-screen characters' lips remain completely closed.")
   })
 
-  // 花名册顺序与参考图顺序必须一致。
+  // 参考图清单的顺序与参考图顺序必须一致。
   test('参考图模式六段齐全，Subject 编号与参考图顺序一致，同类职责只说一次', () => {
     const prompt = h3ClipPrompt({ ...BASE, summary: '阿岚登台', opening: OPENING, speech: { lines: [{ speaker: '青禾', text: '小心' }], voices: {} } })
 
@@ -189,7 +189,7 @@ describe('首帧提示词', () => {
   const FRAME = { style: '日系漫剧', scene: '驾驶舱内', camera: '中景', imagePrompt: '人物坐在操作台前' }
   const TAIL = { kind: '上一镜的末帧', name: '', anchor: '这一镜紧接着它发生' }
 
-  test('花名册里报的顺序就是参考图的顺序，没名字的那张报它是什么', () => {
+  test('参考图清单里报的顺序就是参考图的顺序，没名字的那张报它是什么', () => {
     const prompt = firstFramePrompt({
       ...FRAME,
       refs: [TAIL, { kind: '人物', name: '阿岚', anchor: '少年，白发' }],
@@ -251,7 +251,7 @@ describe('画风推荐提示词', () => {
 describe('节拍', () => {
   const BEATS = { title: '第一集', synopsis: '', source: '原文正文', targetSeconds: 0, cast: [] }
 
-  test('讲法选哪个就换哪套标准，认不出的取值退回第一项', () => {
+  test('讲法选哪个就换哪套标准，认不出的取值按第一项', () => {
     expect(beatsPrompt(BEATS, { mode: 'narrated' })).not.toBe(beatsPrompt(BEATS))
     expect(beatsPrompt(BEATS, { mode: 'x' })).toBe(beatsPrompt(BEATS))
   })
@@ -281,7 +281,7 @@ describe('节拍', () => {
   })
 })
 
-describe('镜头提示词精写', () => {
+describe('分镜提示词', () => {
   const DRAFT = {
     episode: { title: '第一集', synopsis: '雪夜夺城' },
     beatSummary: '客栈对峙',
@@ -314,6 +314,13 @@ describe('镜头提示词精写', () => {
     expect(prompt).toContain('情绪：从戒备转为杀意')
     expect(prompt).toContain('时长：6 秒')
     expect(prompt).toContain('别过来')
+  })
+
+  test('运镜只做一个运动，已定项里说过就不在写法里再说', () => {
+    const prompt = shotPromptDraft(DRAFT)
+
+    expect(prompt).toContain('motion_prompt 的镜头运动只做这一个')
+    expect(prompt).not.toContain('又推又摇')
   })
 
   test('原文段进提示词，且写法判据排在材料之前', () => {
@@ -384,12 +391,29 @@ const SHOTS = {
   previous: null,
 } as const
 
-describe('分镜提示词', () => {
+describe('拆分镜', () => {
   // 模型回的值要落在这几列的枚举里，没列出的取值永远不会被选到。
   test('景别、运镜、衔接、画面来源的每个取值都列给模型', () => {
     const prompt = shotsPrompt(SHOTS)
 
     for (const value of [...SHOT_SIZES, ...CAMERA_MOVES, ...SHOT_JOINS, ...CLIP_SOURCES]) expect(prompt).toContain(value)
+  })
+
+  // 不给依据时 camera 里的高低是随手填的，对峙两边一俯一仰会凭空分出强弱。
+  test('机位高低按人物强弱定', () => {
+    const prompt = shotsPrompt(SHOTS)
+
+    expect(prompt).toContain('机位高低跟着人物关系里的强弱走')
+    expect(prompt).toContain('双方的镜头用同样的景别与高度')
+    expect(prompt).toContain('camera：**机位高低与朝向 + 构图**')
+  })
+
+  test('台词念不完要拆镜，重拆时逐条列出超时的镜头', () => {
+    expect(shotsPrompt(SHOTS)).toContain('几句台词在一镜里念不完，就在句与句之间拆成两镜')
+    expect(shotsPrompt(SHOTS)).not.toContain('上一轮有镜头的台词')
+
+    const prompt = shotsPrompt({ ...SHOTS, overlong: ['第 2 镜的台词念完约 12.3 秒，视频模型单次最长 15 秒'] })
+    expect(prompt).toContain('上一轮有镜头的台词在一镜里念不完，在句与句之间拆开后重新输出：\n- 第 2 镜的台词念完约 12.3 秒，视频模型单次最长 15 秒')
   })
 
   test('中途才入画的人物走参考图模式', () => {
@@ -472,11 +496,17 @@ describe('分镜提示词', () => {
     expect(shotsPrompt(SHOTS)).not.toContain('成片目标约')
   })
 
-  test('音轨模式不同，一镜几个说话人的规则跟着换', () => {
+  test('声音来源不同，一镜几个说话人的规则跟着换', () => {
     expect(shotsPrompt({ ...SHOTS, audioMode: 'native' })).not.toBe(shotsPrompt(SHOTS))
   })
 
-  // 两段提示词由逐镜精写给出，分镜这一步不要。
+  // 两段提示词在写分镜提示词那一步给出，分镜这一步不要。
+  test('不为凑时长编动作，这条只说一次', () => {
+    const prompt = shotsPrompt(SHOTS)
+
+    expect(prompt.split('时长而').length - 1).toBe(1)
+  })
+
   test('分镜只出结构，两段提示词不在这一步要', () => {
     const prompt = shotsPrompt(SHOTS)
 
@@ -530,7 +560,7 @@ describe('模板参数', () => {
     }
   })
 
-  test('定位失败的原因回灌进重试提示词，且排在原文之前', () => {
+  test('定位失败的原因写进重试提示词，且排在原文之前', () => {
     const prompt = episodePrompt(
       { source: '原文正文在这里', targetSeconds: 0, failure: ['第 1 集的 ends_with 在原文里不存在'] },
       { episode_count: '2' }
@@ -544,7 +574,7 @@ describe('模板参数', () => {
     expect(assetsPrompt('原文', [], { must_include: '金方，太白\n沈三' })).toContain('金方、太白、沈三')
   })
 
-  test('每个模板都收自由补充', () => {
+  test('每个模板都接受自由补充', () => {
     for (const template of PROMPT_TEMPLATES) {
       expect(template.params.some((p) => p.key === 'note')).toBe(true)
     }

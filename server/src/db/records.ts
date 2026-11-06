@@ -182,7 +182,7 @@ function saveUsage(db: Database, jobId: string): void {
       response_body: string
     }[]
   ).map((call) => parseJson(call.response_body))
-  // 没改过型号的任务 params 里不带 model，发出去的是端点默认值。
+  // 没改过模型的任务 params 里不带 model，发出去的是端点默认值。
   const params = parseJson(row.params) as { model?: unknown } | null
   const definition = parseJson(row.definition) as { defaults?: { model?: unknown } } | null
   const model = params?.model ?? definition?.defaults?.model
@@ -248,7 +248,6 @@ export function loadCall(db: Database, callId: number): CallRow | null {
   return db.query('SELECT * FROM http_calls WHERE id = ?').get(callId) as CallRow | null
 }
 
-/** 调用记录与本地命令共用的过滤条件。 */
 export interface RecordFilter {
   readonly ownerKind?: OwnerKind | undefined
   readonly ownerId?: string | undefined
@@ -306,7 +305,7 @@ export function curlForCall(call: CallRow, apiKey?: string): CurlExport {
   return toCurl(requestOfCall(call), { apiKey: apiKey ? maskSecret(apiKey) : undefined })
 }
 
-/** 导出为 `tools/send.ts` 的入参。素材仍是路径，凭证仍是打码值，由脚本按环境变量换回。 */
+/** 导出为 `tools/send.ts` 的入参。素材仍是路径，凭证仍是脱敏后的值，由脚本按环境变量换回。 */
 export function requestJsonForCall(call: CallRow): string {
   return JSON.stringify(requestOfCall(call), null, 2)
 }

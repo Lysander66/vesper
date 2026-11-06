@@ -12,7 +12,7 @@ import { ZoomHint } from '@/components/version-strip'
 
 type ShotPart = 'first_frame' | 'clip'
 
-// kind 是发给模型的提示词里的叫法，界面上按资产分类叫。
+// kind 沿用提示词里的叫法，界面上按资产分类显示。
 const kindLabel = (kind: string) => (kind === '人物' ? ASSET_CATEGORY_LABEL.character : kind)
 
 const PART_ROLE: Record<ShotPart, BindingRole> = { first_frame: 'image', clip: 'video' }
@@ -21,7 +21,7 @@ export function ShotPreview({ shotId, part, state }: { shotId: string; part: Sho
   const { settled, preview } = useShotPreview(shotId, state)
 
   if (preview.isError) {
-    return <p className='text-xs text-fail'>提示词计算失败：{preview.error.message}</p>
+    return <p className='text-xs text-fail'>提示词预览失败：{preview.error.message}</p>
   }
   if (!preview.data) return null
 
@@ -57,7 +57,7 @@ export function ShotPreview({ shotId, part, state }: { shotId: string; part: Sho
 
       {voices.length > 0 && (
         <div className='flex flex-wrap items-center gap-2 pt-1'>
-          <Label className='text-xs'>音色样本</Label>
+          <Label className='text-xs'>试音</Label>
           {voices.map((voice) => (
             <span key={voice.name} className={cn('text-2xs', voice.attached === 'no' && 'text-warn')}>
               {voice.name} · {voice.detail}

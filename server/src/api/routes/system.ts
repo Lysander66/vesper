@@ -14,13 +14,12 @@ const ENTRIES: { key: StorageEntry['key']; label: string; purpose: string; path:
   { key: 'db', label: 'vesper.db', purpose: '作品、镜头、产物索引', path: dbFile },
   { key: 'artifacts', label: 'artifacts/', purpose: '设定图、首帧图、视频、配音', path: artifactsRoot },
   { key: 'films', label: 'films/', purpose: '合成版', path: filmsRoot },
-  { key: 'library', label: 'library/', purpose: '素材库的设定图与音色样本', path: libraryDir },
+  { key: 'library', label: 'library/', purpose: '素材库的设定图与试音', path: libraryDir },
   { key: 'voices', label: 'voices/', purpose: '预置音色', path: voicesDir },
   { key: 'uploads', label: 'uploads/', purpose: '手动上传的图片与音频', path: uploadDir },
   { key: 'requests', label: 'requests/', purpose: '导出的请求 JSON', path: requestDir },
 ]
 
-/** 各平台的文件管理器。 */
 const OPENERS: Record<string, string[] | undefined> = {
   darwin: ['open'],
   win32: ['explorer'],
@@ -40,7 +39,7 @@ export function registerSystem(on: Register): void {
 function storageView(): StorageView {
   const entries = ENTRIES.map((entry) => {
     const path = entry.path()
-    // db 是文件不是目录，递归 stat 那套对它不成立。
+    // db 是单个文件，不按目录统计。
     const usage = entry.key === 'db' ? fileUsage(path) : dirUsage(path)
     return { key: entry.key, label: entry.label, purpose: entry.purpose, path, ...usage }
   })

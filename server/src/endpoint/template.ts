@@ -28,7 +28,7 @@ export function lookup(path: string, ctx: Context): unknown {
   return cursor
 }
 
-/** 枚举映射按占位符路径整串匹配，映射表里没登记的值原样透传。 */
+/** 枚举映射按占位符路径整串匹配，映射表里没登记的值原样保留。 */
 function applyEnumMap(path: string, value: unknown, enumMaps: EnumMaps): unknown {
   const table = enumMaps?.[path]
   if (!table || typeof value !== 'string') return value

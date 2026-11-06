@@ -46,14 +46,14 @@ export async function planEpisodes(ctx: GenContext, project: ProjectRow, file: S
     const { text } = await generateText(ctx, {
       owner: { kind: 'project', id: project.id },
       purpose: 'episode_plan',
-      label: attempt === 1 ? '分集规划' : `分集规划（第 ${attempt} 次）`,
+      label: attempt === 1 ? '分集' : `分集（第 ${attempt} 次）`,
       params: {
         system: EPISODE_SYSTEM,
         prompt: episodePrompt({ source, targetSeconds: project.target_seconds, failure }, args),
       },
     })
 
-    const reply = parseReply(text, episodeSchema, '分集规划')
+    const reply = parseReply(text, episodeSchema, '分集')
     const located = locateAnchors(
       source,
       reply.episodes.map((e) => e.ends_with),

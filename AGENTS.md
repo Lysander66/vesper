@@ -32,6 +32,8 @@ Problems invisible in code — repeated sentences, wrappers outweighing the scen
 
 UI text is Chinese: professional, idiomatic, concise written language. Avoiding jargon does not mean going colloquial; standard industry terms stay.
 
+One concept, one name across UI, docs, comments, and errors, as listed in `docs/terms.md`; code identifiers keep their English names. Add a row there when introducing a new user-facing concept.
+
 ## Editing this file
 
 State principles only; no examples.

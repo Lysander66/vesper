@@ -1,10 +1,10 @@
-/** 分镜拆分的台词校验与模型回复解析，不调用模型。 */
+/** 分镜拆分的台词校验、重拆与模型回复解析，不调用模型。 */
 
 import type { Beat } from '@vesper/shared'
 
 import { describe, expect, test } from 'bun:test'
 
-import { assertAllUtterancesUsed, pickUtterances } from '../src/pipeline/script'
+import { assertAllUtterancesUsed, assertUtterancesFit, pickUtterances, splitBeat } from '../src/pipeline/script'
 import { withHow } from '../src/pipeline/polish'
 import { parseReply, ReplyError, z } from '../src/pipeline/reply'
 import { Conflict } from '../src/domain/errors'
@@ -70,7 +70,7 @@ describe('模型回复解析', () => {
   })
 })
 
-describe('逐镜精写的说法写回台词', () => {
+describe('写分镜提示词时的说法写回台词', () => {
   test('按开口顺序写回，空台词不占位，条数不齐时不改', () => {
     const lines = [{ speaker: '甲', text: '一' }, { speaker: null, text: ' ' }, { speaker: '乙', text: '二' }]
 
@@ -80,5 +80,52 @@ describe('逐镜精写的说法写回台词', () => {
       { speaker: '乙', text: '二', how: '喊出来' },
     ])
     expect(withHow(lines, [{ how: '压低' }])[2]).toEqual({ speaker: '乙', text: '二' })
+  })
+})
+
+describe('台词念不完时重拆', () => {
+  const LIMIT = { seconds: 10, label: '视频模型单次最长' }
+  const reply = (...indexes: number[][]) => JSON.stringify({ shots: indexes.map((utterance_indexes) => ({ seconds: 5, utterance_indexes })) })
+  // 第 0 镜念不完就报出来，其余视作念得完。
+  const overlongOf = (shots: { utterance_indexes: number[] }[]) => (shots[0]!.utterance_indexes.length > 1 ? ['第 1 镜念不完'] : [])
+
+  function scripted(...replies: string[]) {
+    const prompts: string[] = []
+    const warnings: string[] = []
+    const ask = async (prompt: string) => {
+      prompts.push(prompt)
+      return replies[prompts.length - 1]!
+    }
+    return { ask, prompts, warnings, warn: (message: string) => warnings.push(message) }
+  }
+  const promptFor = (overlong: readonly string[]) => (overlong.length === 0 ? '首次' : `重拆：${overlong.join('；')}`)
+
+  test('单句台词就超过上限时报错，写明上限从哪来', () => {
+    const long: Beat[] = [{ mode: 'scene', summary: '独白', utterances: [{ speaker: '顾舟', text: '我'.repeat(80) }] }]
+    expect(() => assertUtterancesFit(long, 5, LIMIT)).toThrow(Conflict)
+    expect(() => assertUtterancesFit(long, 5, LIMIT)).toThrow('一句就超过视频模型单次最长 10 秒')
+    expect(() => assertUtterancesFit(BEATS, 5, LIMIT)).not.toThrow()
+  })
+
+  test('有镜头念不完时把超时的镜头带进重拆提示，重拆一次', async () => {
+    const run = scripted(reply([0, 1]), reply([0], [1]))
+    const result = await splitBeat(run.ask, run.warn, 0, '进店', promptFor, overlongOf)
+    expect(result.shots).toHaveLength(2)
+    expect(run.prompts).toEqual(['首次', '重拆：第 1 镜念不完'])
+    expect(run.warnings).toEqual(['节拍 1「进店」有镜头的台词念不完，重拆这一拍'])
+  })
+
+  test('重拆后仍念不完就报错，不再重试', async () => {
+    const run = scripted(reply([0, 1]), reply([0, 1]), reply([0], [1]))
+    await expect(splitBeat(run.ask, run.warn, 0, '进店', promptFor, overlongOf)).rejects.toThrow('重拆后仍有镜头的台词念不完：第 1 镜念不完')
+    expect(run.prompts).toHaveLength(2)
+  })
+
+  // 解析失败与念不完共用一次重拆机会。
+  test('解析失败后重拆一次，重拆的回复念不完就报错', async () => {
+    const run = scripted('不是 JSON', reply([0, 1]))
+    await expect(splitBeat(run.ask, run.warn, 0, '进店', promptFor, overlongOf)).rejects.toThrow('重拆后仍有镜头的台词念不完')
+    expect(run.prompts).toEqual(['首次', '首次'])
+    expect(run.warnings).toEqual(['节拍 1「进店」的回复解析失败，重拆这一拍'])
   })
 })

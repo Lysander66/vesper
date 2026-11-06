@@ -67,7 +67,7 @@ export async function generate(ctx: GenContext, request: GenRequest): Promise<Ge
   const binding = resolveBinding(ctx.db, ctx.projectId, request.role)
   const endpoint = getEndpoint(ctx.db, binding.endpointId)
   const overrides = ctx.overrides?.[request.role]
-  // 画幅对应的档位随型号变，先定型号。
+  // 画幅对应的档位随模型变，先定模型。
   const model = modelOf(endpoint.definition, binding.params, overrides)
 
   // 后者覆盖前者：绑定、画幅、调用方参数、改写的提示词、本次临时参数。
@@ -108,7 +108,7 @@ export async function generate(ctx: GenContext, request: GenRequest): Promise<Ge
   if (outcome.status !== 'succeeded') {
     const reason = outcome.error ?? '未知原因'
     // 审核拒绝原样重试仍会被拒，提示可行的改法。
-    const hint = isModerationRejection(reason) ? `（${endpoint.name} 的内容审核拒绝。原样重试多半还是拒，可改写提示词、换绑一个图像或视频端点，或改用参考图模式）` : ''
+    const hint = isModerationRejection(reason) ? `（${endpoint.name} 的内容审核拒绝。原样重试多半还是拒，可改写提示词、换绑一个图像或视频接口，或改用参考图模式）` : ''
     throw new GenFailure(`${request.label}失败：${reason}${hint}`, jobId)
   }
   return { jobId, outcome, definition: endpoint.definition }
@@ -122,7 +122,7 @@ function aspectParams(ctx: GenContext, definition: EndpointDefinition, override:
   const aspect = override ?? (isAspect(stored) ? stored : '16:9')
   const capabilities = capabilitiesFor(definition.capabilities, model)
 
-  // 两项各按各的声明填：有的端点两样都收。
+  // 两项各按各的声明填：有的端点两项都接受。
   const size = pickSize(capabilities.resolutions ?? [], aspect)
   const ratio = pickAspectRatio(capabilities.aspect_ratios, aspect)
   return { ...(size !== null && { size }), ...(ratio !== null && { aspect_ratio: ratio }) }
@@ -148,12 +148,12 @@ export function projectStyle(ctx: GenContext, projectId?: string | null): string
   return findProject(ctx.db, projectId ?? ctx.projectId)?.style ?? ''
 }
 
-/** 档位随型号变，取档位用 roleCapabilities。 */
+/** 档位随模型变，取档位用 roleCapabilities。 */
 export function roleDefinition(ctx: GenContext, role: BindingRole): EndpointDefinition {
   return getEndpoint(ctx.db, resolveBinding(ctx.db, ctx.projectId, role).endpointId).definition
 }
 
-/** 实际生效的音轨模式：视频端点不出声时按单独配音。进度、合成与发起默认值都按它算。 */
+/** 实际生效的声音来源：视频端点不出声时按单独配音。进度、合成与发起默认值都按它算。 */
 export function effectiveAudioMode(db: Database, projectId: string, wanted: AudioMode): AudioMode {
   try {
     return resolveAudioMode(wanted, endpointCapabilities(db, projectId, 'video').audio === 'native')
@@ -164,7 +164,7 @@ export function effectiveAudioMode(db: Database, projectId: string, wanted: Audi
   }
 }
 
-/** 时长档位、参考图上限随型号变，按本次实际用的型号取。 */
+/** 时长档位、参考图上限随模型变，按本次实际用的模型取。 */
 export function roleCapabilities(ctx: GenContext, role: BindingRole): EndpointCapabilities {
   return endpointCapabilities(ctx.db, ctx.projectId, role, ctx.overrides?.[role])
 }
@@ -191,7 +191,15 @@ export function snapDuration(capabilities: EndpointCapabilities, seconds: number
   return sorted.find((d) => d >= seconds) ?? sorted[sorted.length - 1]
 }
 
-/** 各家审核拒绝没有统一错误码，按原话里的字眼识别；漏认只是少一句提示。 */
+/** 端点单次能生成的最长秒数，不接受时长时为 undefined。 */
+export function maxDuration(capabilities: EndpointCapabilities): number | undefined {
+  const options = capabilities.durations
+  if (!options) return undefined
+  if ('min' in options) return options.max
+  return options.length === 0 ? undefined : Math.max(...options)
+}
+
+/** 各供应商的审核拒绝没有统一错误码，按原话里的字眼识别；漏认只是少一句提示。 */
 const MODERATION_WORDS = ['safety system', 'content policy', 'moderation', 'sensitive', '敏感', '审核', '违规']
 
 export function isModerationRejection(reason: string): boolean {

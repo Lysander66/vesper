@@ -80,7 +80,7 @@ export function SourcesPanel({ view }: { view: ProjectView }) {
       ) : (
         <div className='divide-y rounded-md border'>
           {view.sources.map((source) => (
-            // 区间表是本地草稿，只在这份原文的分集换了一批时才重挂，否则轮询会冲掉正在编辑的内容。
+            // 区间表是本地草稿，只在这份原文的分集整批更换时才重新挂载，否则任务进度触发的刷新会冲掉正在编辑的内容。
             <SourceBlock
               key={`${source.id}:${source.plan_state}:${source.episodes.map((episode) => episode.id).join(',')}`}
               projectId={view.project.id}
@@ -202,7 +202,7 @@ function SourceBlock({ projectId, source, picked, onPick }: { projectId: string;
                 busy={plan.busy}
                 question={replanWarning(source.episodes, wantedCount, dirty)}
                 disabled={wantedCount === 0}
-                title={wantedCount === 0 ? '请先在参数中填写集数' : `切成 ${wantedCount} 集`}
+                title={wantedCount === 0 ? '请先在参数中填写集数' : `分为 ${wantedCount} 集`}
                 lead={
                   <div className='flex items-center gap-2'>
                     <Button size='sm' variant='outline' disabled={suggest.isPending} onClick={() => suggest.mutate()}>

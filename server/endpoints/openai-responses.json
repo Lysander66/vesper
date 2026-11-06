@@ -6,7 +6,7 @@
     "title": "OpenAI Responses API",
     "docs": "https://developers.openai.com/api/docs/guides/text",
     "hints": { "base_url": "https://api.openai.com" },
-    "notes": "temperature 刻意不给缺省：推理模型收到它一律 400，而这一栏默认就该能跑推理模型；要调的家在绑定参数里显式给。"
+    "notes": "temperature 刻意不给缺省：推理模型收到它一律 400，而这一栏默认就该能跑推理模型；需要调 temperature 时在绑定参数里显式填写。"
   },
   "auth": {
     "headers": { "Authorization": "Bearer {{ api_key }}" }

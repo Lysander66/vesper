@@ -99,7 +99,7 @@ async function produceClip(ctx: GenContext, shot: ShotRow, audio: AudioMode, con
     if (byReference) {
       assertRefsLocked(ctx.db, refsOf(shot))
       noteDropped(ctx, shot, plan)
-      for (const miss of plan.voiceMisses) appendEvent(ctx.db, ctx.runId, { type: 'note', level: 'warn', shot_id: shot.id, message: `第 ${shot.idx + 1} 镜「${miss.name}」的音色样本没带上：${miss.reason}` })
+      for (const miss of plan.voiceMisses) appendEvent(ctx.db, ctx.runId, { type: 'note', level: 'warn', shot_id: shot.id, message: `第 ${shot.idx + 1} 镜「${miss.name}」的试音没带上：${miss.reason}` })
       const images = plan.kept.map((k) => compactImage(k.image))
       inputs = {
         ...(images.length === 0 ? {} : { reference_images: await toRefs(images) }),
@@ -145,7 +145,7 @@ async function produceClip(ctx: GenContext, shot: ShotRow, audio: AudioMode, con
 
 async function produceVoice(ctx: GenContext, shot: ShotRow, audio: AudioMode): Promise<ProduceResult> {
   if (audio === 'native') {
-    const reason = '无需生成：音轨由视频模型一起出'
+    const reason = '无需生成：声音由视频模型一起出'
     appendEvent(ctx.db, ctx.runId, { type: 'skipped', shot_id: shot.id, purpose: 'voice', message: reason })
     return { kind: 'voice', path: null, jobId: null, skipped: reason }
   }
@@ -186,7 +186,7 @@ export async function produceShot(ctx: GenContext, shot: ShotRow, kinds: readonl
       type: 'note',
       level: 'warn',
       shot_id: shot.id,
-      message: '当前视频调用方式不含音轨，本次改用单独配音',
+      message: '当前视频模型不自带声音，本次改用单独配音',
     })
   }
 
@@ -223,7 +223,7 @@ function noteDropped(ctx: GenContext, shot: ShotRow, plan: { kept: readonly RefS
     type: 'note',
     level: 'warn',
     message:
-      `第 ${shot.idx + 1} 镜有 ${plan.kept.length + plan.dropped.length} 张参考图，端点最多接 ${plan.limit} 张，` +
+      `第 ${shot.idx + 1} 镜有 ${plan.kept.length + plan.dropped.length} 张参考图，接口最多接受 ${plan.limit} 张，` +
       `已丢弃：${plan.dropped.map(labelOf).join('、')}`,
   })
 }
@@ -304,6 +304,6 @@ function trimmedSample(voice: VoiceSlot, scratch: string[]): string {
   scratch.push(dir)
   const output = join(dir, 'sample.mp3')
   const proc = Bun.spawnSync(trimAudioArgs(voice.path, voice.seconds, output), { stdout: 'pipe', stderr: 'pipe' })
-  if (proc.exitCode !== 0) throw new Error(`截取「${voice.name}」的音色样本失败：${proc.stderr.toString().trim()}`)
+  if (proc.exitCode !== 0) throw new Error(`截取「${voice.name}」的试音失败：${proc.stderr.toString().trim()}`)
   return output
 }

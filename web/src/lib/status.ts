@@ -46,7 +46,7 @@ export const SLOT_LABEL: Record<SlotStatus, string> = {
   skipped: '无需生成',
 }
 
-/** 侧栏不上红，失败按「待处理」的黄。 */
+/** 侧栏不用红色，失败按「待处理」显示黄色。 */
 export function episodeTone(episode: EpisodeSummary): Tone {
   const counts = episode.progress?.counts
   if (counts?.failed) return 'warn'

@@ -41,7 +41,7 @@ function noteOf(args: PromptArgs, media = false): string {
 // ——— 分集 ———
 
 export const EPISODE_SYSTEM =
-  '你是短剧编剧，负责把长篇原文切成若干集。只输出 JSON，不要解释，不要围栏之外的任何文字。'
+  '你是短剧编剧，负责把长篇原文切成若干集。只输出 JSON，不要解释，JSON 之外不要输出任何文字。'
 
 export interface EpisodePromptInput {
   readonly source: string
@@ -216,7 +216,7 @@ export function assetsPrompt(source: string, onScreen: readonly string[] = [], a
       '- 要提取：剧情会反复回到、观众需要认出「又回到了这个地方」的固定空间',
       '- 不用提取：只路过一次的地方、泛指的环境（「走廊」「街上」）、纯天空纯海面这类无结构的背景',
       '- **一个场景只装一个镜头拍得下的连续空间**。通道、厅堂、台阶、殿内要分成四个场景；',
-      '  合成一个「金字塔内部」来写，画出来会是上下两半拼起来的图',
+      '  合并成一个「金字塔内部」来写，画出来会是上下两半拼起来的图',
       '- 提取几处由剧情定。没提取的地方照样能拍，按那一镜的环境描述现画',
       '',
     ]),
@@ -342,7 +342,7 @@ export function beatsPrompt(input: BeatsPromptInput, args: PromptArgs = {}): str
     '',
     '看得懂（最要紧）：',
     '- 观众只看这一集，没读过原文。节拍连起来读，要能说出谁、想要什么、为什么这么做、结果怎样',
-    '- 原文里交代身份、世界规则、前因的台词优先留；只表态度、抒情绪的台词可以压',
+    '- 原文里交代身份、世界规则、前因的台词优先留；只表态度、抒情绪的台词可以精简',
     '- 剧情离不开的设定和心理活动，转成角色说出口的台词，尽量用原文的话；只渲染气氛的才删',
     '- 插叙、倒叙、括号里的补叙也是剧情，不当附注略过；交代真相或改变前文理解的，照样写成节拍',
     '',
@@ -351,7 +351,7 @@ export function beatsPrompt(input: BeatsPromptInput, args: PromptArgs = {}): str
     narrated
       ? '- 旁白是主线，把剧情讲清楚；scene 只留爆点与情绪顶点\n- 角色对白短，一句顶一句，不铺长对话'
       : '- 冲突、对峙、反转、抉择一律展开成 scene，靠对白与表演推进\n- 旁白只补画面交代不了的：时间跳转、前情。地点、来者、动作看得出来就不用旁白说，也不替角色说他们该说的话',
-    '- 节拍数由剧情定：一拍讲一件事，讲完就收。时长不够就少几拍，别编内容去填',
+    '- 节拍数由剧情定：一拍讲一件事，讲完就收。内容撑不满时长就少几拍，别编内容去填',
     '- 最后一个节拍收在本集最有张力的地方',
     '',
     '哪些展开成 scene：',
@@ -359,7 +359,7 @@ export function beatsPrompt(input: BeatsPromptInput, args: PromptArgs = {}): str
     '- 主角做出选择、说出关键台词的那一刻',
     '',
     '哪些压成 narration：',
-    '- 赶路、过场、重复回合（三次同类战斗合成一句「她一路杀了过去」）',
+    '- 赶路、过场、重复回合（三次同类战斗合并成一句「她一路杀了过去」）',
     '',
     '哪些整段删掉：',
     '- 与剧情无关的心理活动、内心独白，这些拍不出来',
@@ -411,8 +411,7 @@ export interface ShotsPromptInput {
     source: string
     utterances: readonly { speaker: string | null; text: string }[]
   }[]
-  /** 可出镜的已锁定人物，以及各自锁定版里有的设定图，模型只能从中挑。 */
-  /** outfit 只在这个人有不止一身装扮时给，其余给空串。 */
+  /** 可出镜的已锁定人物及各自锁定版里有的设定图，模型只能从中挑；outfit 只在这个人有不止一身装扮时给，其余给空串。 */
   readonly cast: readonly { name: string; identity: string; looks: readonly AssetFileRole[]; outfit: string }[]
   /** 已锁定的场景与道具，没有时相应段落整段省略。 */
   readonly sceneNames: readonly string[]
@@ -429,6 +428,8 @@ export interface ShotsPromptInput {
   readonly focus: number
   /** 上一拍拆出的最后一镜，景别、机位、场景要和它接上。本集第一拍给 null。 */
   readonly previous: { readonly summary: string; readonly shotSize: string; readonly camera: string; readonly scene: string } | null
+  /** 上一轮台词念不完的镜头，逐条交给模型重拆。 */
+  readonly overlong?: readonly string[]
 }
 
 /** 一次只拆一拍：整集一起拆时回复过长，一处格式错整集作废。 */
@@ -477,6 +478,8 @@ export function shotsPrompt(input: ShotsPromptInput, args: PromptArgs = {}): str
       + '没有理由就固定机位，让人物在画框里动。一镜只做一个运动，不要又推又摇',
     '- **情绪最强的地方反而要静**：对峙、下决心、说出关键那一句时，镜头停住；'
       + '运动留给赶路、打斗和转场',
+    '- **机位高低跟着人物关系里的强弱走**：俯拍让人显得被压住、处境被动，仰拍让人显得有分量、占上风；'
+      + '没有强弱之分就平视。势均力敌的对峙，双方的镜头用同样的景别与高度',
     '- **情绪写成弧线**：「从戒备转为动摇」比「紧张」有用：一镜之内有变化，画面才有戏',
     '- **画框里不能只有人**：前景放点东西（门框、桌沿、别人的肩背），背景交代这是哪儿。'
       + '人物占满画框只在极近特写里成立，连着几镜都这么拍，观众就不知道故事发生在什么地方',
@@ -528,14 +531,14 @@ export function shotsPrompt(input: ShotsPromptInput, args: PromptArgs = {}): str
     '- scene：这一镜**镜头里看得见的那部分环境**与光线，画得出来的描述。'
       + '填了 scene_ref 就不用再抄一遍场景设定里的整体结构，但要写清这一镜取到了其中哪一角、什么光',
     `- shot_size：景别，${SHOT_SIZES.map((s) => `${s}（${SHOT_SIZE_LABEL[s]}）`).join(' / ')} 之一`,
-    '- camera：**机位 + 构图**，如「平视，人物居左，门框在前景」「略低机位，过肩」。'
+    '- camera：**机位高低与朝向 + 构图**，如「平视，人物居左，门框在前景」「略低机位，过肩」。'
       + '构图写主体在画框里的位置与前后景关系。**只写静止画面里看得出来的东西**，景别在 shot_size 里，运镜在 camera_move 里',
     `- camera_move：运镜，${CAMERA_MOVES.map((m) => `${m}（${CAMERA_MOVE_LABEL[m]}）`).join(' / ')} 之一。一镜只做一个运动，没理由就 static`,
     '- mood：这一镜的情绪弧线，一句话，写成「从 A 转为 B」；没有变化就写这一镜的情绪基调',
     // 接不接由这一镜自己说明：空镜接上一镜带人的末帧，模型多半把人画回来。
     `- join：与上一镜怎么接，${SHOT_JOINS.join(' / ')} 之一。`
-      + 'continue = 紧接着上一镜发生，上一镜末帧会当这一镜的参考图，只在同一个场景、机位相近、起终状态相接时用；'
-      + 'cut = 各自成镜，硬切，换场景、换机位、空镜与建立镜都用它；'
+      + 'continue = 紧接着上一镜发生，上一镜末帧会当这一镜的参考图，只在同一个场景、机位相近、上一镜的结束状态与这一镜的开始状态相接时用；'
+      + 'cut = 各自成镜，硬切，换场景、换机位、空镜与建立镜头都用它；'
       + 'fade = 过黑场，只用在幕与集的边界。'
       + (previous === null ? '这是本集第一镜，填 cut' : '第一镜按它和上一拍最后一镜的关系填'),
     `- clip_source：视频的画面从哪来，${CLIP_SOURCES.join(' / ')} 之一，按这一镜要什么来挑，不偏向哪一种。`
@@ -549,7 +552,7 @@ export function shotsPrompt(input: ShotsPromptInput, args: PromptArgs = {}): str
     `- seconds：本镜时长，数字。按这一镜的动作与台词要多久定：一个简短动作 ${input.minSeconds} 秒就够；`
       + `对白偏长或表演需要停留时加一两秒；`
       + `只有画面里有连续动作、或运镜确实需要这么长时，才用到接近 ${input.maxSeconds} 秒`,
-    '- 有台词的镜头要留够念完的时间。但**不要为了填满时长而人为增加动作**',
+    '- 有台词的镜头要留够念完的时间。几句台词在一镜里念不完，就在句与句之间拆成两镜，不要指望念快一点',
     '- cast：本镜出场的有设定图的人物，每项 {"name","look"}，没有就给空数组',
     '- scene_ref：本镜所在的有设定图的场景名，单个字符串；不适用就给空串',
     '- props：本镜画面里出现的有设定图的道具名字数组，没有就给空数组',
@@ -557,6 +560,8 @@ export function shotsPrompt(input: ShotsPromptInput, args: PromptArgs = {}): str
     '输出 JSON：',
     '{"shots":[{"summary":"","scene":"","shot_size":"medium","camera":"","camera_move":"static",' +
       '"mood":"","join":"cut","clip_source":"first_frame","utterance_indexes":[0],"seconds":4,"cast":[{"name":"","look":"full_body"}],"scene_ref":"","props":[]}]}',
+    '',
+    overlongOf(input.overlong ?? []),
     '',
     noteOf(args),
     '',
@@ -574,7 +579,12 @@ export function shotsPrompt(input: ShotsPromptInput, args: PromptArgs = {}): str
     .join('\n')
 }
 
-// ——— 逐镜提示词精写 ———
+function overlongOf(overlong: readonly string[]): string {
+  if (overlong.length === 0) return ''
+  return ['上一轮有镜头的台词在一镜里念不完，在句与句之间拆开后重新输出：', ...overlong.map((line) => `- ${line}`)].join('\n')
+}
+
+// ——— 分镜提示词 ———
 
 export const SHOT_PROMPT_SYSTEM =
   '你是分镜画师兼提示词作者，为一个镜头写给图像与视频生成模型直接使用的正文。只输出 JSON，不要解释。'
@@ -585,7 +595,7 @@ export interface ShotPromptInput {
   readonly beatSummary: string
   /** 这一拍对应的原文段，神态、环境、动作细节都从这里取。定位失败给空串。 */
   readonly sourceText: string
-  /** 上一镜的动作末态（它的 motion_prompt），这一镜要接得上。精写按镜序跑，轮到本镜时它已写回。 */
+  /** 上一镜的动作末态（它的 motion_prompt），这一镜要接得上。分镜提示词按镜序写，轮到本镜时它已写回。 */
   readonly previous: { readonly summary: string; readonly camera: string; readonly ending: string } | null
   readonly next: { readonly summary: string; readonly camera: string } | null
   readonly shot: {
@@ -603,7 +613,7 @@ export interface ShotPromptInput {
   readonly utterances: readonly Utterance[]
   /** traits 只用来让动作合乎体型，非人形角色只给名字时会被写成人的手势。 */
   readonly cast: readonly { readonly name: string; readonly identity: string; readonly traits: string }[]
-  /** 场景设定的文字描述；没挂场景给空串。 */
+  /** 没挂场景给空串。 */
   readonly sceneAnchor: string
   readonly props: readonly { readonly name: string; readonly description: string }[]
 }
@@ -661,13 +671,13 @@ export function shotPromptDraft(input: ShotPromptInput, args: PromptArgs = {}): 
     input.shot.clipSource === 'first_frame' && input.cast.length > 0
       ? '- 出场人物都要在首帧里认得出来，至少露出身形或侧脸：视频模型只认首帧里的人，首帧里没有的人到视频里会换一副长相'
       : '',
-    '- 反例（过短）：「她站在门口发呆。」这句没有环境、没有前后景，模型只能把人怼到镜头前',
+    '- 反例（过短）：「她站在门口发呆。」这句没有环境、没有前后景，模型只能镜头怼脸拍',
     '',
     'motion_prompt 怎么写：',
     '- 第一句先说清主体与局面：谁、正对着谁或什么、在做什么，然后才是动作',
     `- ${shot.seconds} 秒里的过程：从${opening}的姿态起，动作怎么起、怎么进行、收在哪个姿态或反应上`,
     '- 一段连贯的过程，中间不留空档：前一个动作收在哪，下一个就从哪起，不要列成几个各自独立的片段',
-    '- 镜头运动按上面定好的运镜写，写清跟着什么动；固定就写「镜头固定」。一镜只做一个运动，不要又推又摇',
+    '- 镜头运动按上面定好的运镜写，写清跟着什么动；固定就写「镜头固定」',
     '- 「缓缓」「轻微」「慢慢」这类幅度词只留给真正要控制幅度的那个动作，不要每句都挂',
     // 站着念台词是视频模型最常见的问题；怎么说归 lines，这里只管身体。
     speech.some((u) => (u.speaker ?? '') !== '')
@@ -686,7 +696,7 @@ export function shotPromptDraft(input: ShotPromptInput, args: PromptArgs = {}): 
     speech.length > 0 ? '- 按上面台词的顺序每句一条 how：音量、语速、嗓音的质地（压低、发颤、拖长、一字一顿、喊出来），当面说还是经设备传出' : '',
     speech.length > 0 ? '- 写听得出来的声音，不写情绪形容词；合乎说话人的身份与此刻的处境' : '',
     '',
-    '两段都要过图像与视频模型的内容审核：血迹、伤口、利器刺入人体这类字眼会让整镜被拒，改用动作、反应与光影写。',
+    '这几段都要过图像与视频模型的内容审核：血迹、伤口、利器刺入人体这类字眼会让整镜被拒，改用动作、反应与光影写。',
     '画风由系统另外加上，不要写画风、艺术家名或「高清」「杰作」这类词。',
     '',
     input.sourceText.trim() !== ''
@@ -805,7 +815,7 @@ export function lookPrompt(role: string, name: string, anchors: readonly string[
     .join('\n')
 }
 
-/** 参考图花名册里的一条，顺序与实际发出的参考图一致。 */
+/** 参考图清单里的一条，顺序与实际发出的参考图一致。 */
 export interface FirstFrameRef {
   readonly kind: string
   /** 末帧这类没有名字的参考图给空串。 */
@@ -823,7 +833,7 @@ export const REF_KINDS = {
   prop: { label: '道具', duty: '提供这件物品的外观与材质' },
 } as const
 
-/** 挑到的不是全身立绘时，花名册按这一张实际是什么说职责。没列的角色位沿用 REF_KINDS。 */
+/** 挑到的不是全身立绘时，清单按这一张实际是什么写职责。没列的设定图类型沿用 REF_KINDS。 */
 export const LOOK_DUTY: Readonly<Partial<Record<AssetFileRole, string>>> = {
   portrait: '只提供长相、发型、面部特征与上身服装',
   turnaround: '提供体态、侧面与背面的轮廓，以及服装',
@@ -858,7 +868,7 @@ export function firstFramePrompt(input: FirstFrameInput, args: PromptArgs = {}):
   return lines.filter((line) => line.trim() !== '').join('\n')
 }
 
-/** 画风、参考图花名册与取景。首帧出图与参考图出视频共用，后者没有首帧，开场画面只能靠这一段定。 */
+/** 画风、参考图清单与取景。首帧出图与参考图出视频共用，后者没有首帧，开场画面只能靠这一段定。 */
 function framingLines(input: FirstFrameInput): string[] {
   const lines = [input.style]
   if (input.refs.length > 0) {
@@ -924,11 +934,11 @@ export interface ClipInput {
   readonly scene?: string | undefined
   /** 出镜人物的名字。外观由首帧图确定，文字再写一遍会与图冲突。 */
   readonly castNames?: readonly string[] | undefined
-  /** 不走首帧、直接喂参考图时给：开场画面由这一段定。 */
+  /** 不用首帧、直接把参考图交给视频模型时给：开场画面由这一段定。 */
   readonly opening?: FirstFrameInput | undefined
   /** 请求参数已带时长，提示词里也要写明，模型才不会自行补动作。 */
   readonly seconds: number
-  /** 这一镜的声音，由逐镜精写给出。只有视频自带声音时填，空串时用通用的一句。 */
+  /** 这一镜的声音，由分镜提示词一步给出。只有视频自带声音时填，空串时用通用的一句。 */
   readonly sound?: string | undefined
   /** 只有视频自带声音时填：单独配音时再给台词，会和配音叠成两层人声。 */
   readonly speech?:
@@ -973,7 +983,7 @@ export function clipPrompt(input: ClipInput, args: PromptArgs = {}): string {
 
   const speech = input.speech
   if (speech && speech.lines.length > 0) {
-    // 台词用自然语言，不用厂商私有标记（认不出会被念出来）。
+    // 台词用自然语言，不用供应商私有标记（认不出会被念出来）。
     const who = speakersIn(speech, input.castNames)
     // 音色紧跟台词，单列时模型要自己对回说话人。
     const voiceOf = (name: string) => {
@@ -1040,7 +1050,7 @@ function speechRules(speech: NonNullable<ClipInput['speech']>, who: Speakers): s
   return rules
 }
 
-/** MiniMax H3 官方写法（https://github.com/MiniMax-AI/MiniMax-H3/tree/main/skills/h3-prompt-writing）：英文骨架与标记，内容用中文。[Shot 1] 不带切换时间点即不切镜，时长只走请求参数。 */
+/** MiniMax H3 写法：英文骨架与标记，内容用中文。[Shot 1] 不带切换时间点即不切镜，时长只走请求参数。 */
 export function h3ClipPrompt(input: ClipInput, args: PromptArgs = {}): string {
   const opening = input.opening
   const refs = opening?.refs ?? []
@@ -1139,22 +1149,22 @@ function joinMixed(parts: readonly string[]): string {
     .reduce((joined, part) => (joined === '' ? part : /[\x21-\x7e]$/.test(joined) || /^[\x21-\x7e]/.test(part) ? `${joined} ${part}` : joined + part), '')
 }
 
-/** 拼进一整段时补上句号，精写出的句子常不带收尾标点。 */
+/** 拼进一整段时补上句号，分镜提示词里的句子常不带收尾标点。 */
 function sentence(text: string): string {
   const trimmed = text.trim()
   if (trimmed === '') return ''
   return /[。！？.!?」]$/.test(trimmed) ? trimmed : `${trimmed}。`
 }
 
-/** 模板自述：参数由模板声明，界面照着生成输入框。没有可调参数的只留一句自由补充。 */
+/** 参数由模板声明，界面照着生成输入框。没有可调参数的只留一句自由补充。 */
 export const PROMPT_TEMPLATES: readonly PromptTemplate[] = [
   { id: 'episode', title: '分集', purpose: '把原文按剧情切成若干集，每集末句逐字抄出，用来在原文里找准切分位置', params: EPISODE_PARAMS },
-  { id: 'assets', title: '从原文提取', purpose: '挑出需要固定形象、会在多个镜头里反复出现的人物、场景与道具', params: ASSETS_PARAMS },
+  { id: 'assets', title: '提取资产', purpose: '挑出需要固定形象、会在多个镜头里反复出现的人物、场景与道具', params: ASSETS_PARAMS },
   { id: 'beats', title: '写节拍', purpose: '把一集原文改编成叙事节拍，定下哪些展开演、哪些一句带过', params: BEATS_PARAMS },
   { id: 'shots', title: '拆分镜', purpose: '把已确认的节拍拆成镜头表，分配画面与台词', params: [NOTE_PARAM] },
   { id: 'review', title: '审查', purpose: '只看节拍或分镜复述剧情，列出看不懂、接不上的地方', params: [NOTE_PARAM] },
-  { id: 'shot_prompt', title: '镜头提示词', purpose: '按本镜上下文与原文细节，写好首帧与视频提示词', params: [NOTE_PARAM] },
+  { id: 'shot_prompt', title: '分镜提示词', purpose: '按本镜上下文与原文细节，写好首帧与视频提示词', params: [NOTE_PARAM] },
   { id: 'look', title: '设定图', purpose: '按资产描述画出设定图，之后每一镜都照它画', params: [NOTE_PARAM] },
   { id: 'first_frame', title: '首帧', purpose: '按分镜描述与参考图画出这一镜的第一帧', params: [NOTE_PARAM] },
-  { id: 'clip', title: '视频', purpose: '从首帧出发生成这一镜的运动', params: [NOTE_PARAM] },
+  { id: 'clip', title: '视频', purpose: '按首帧或参考图生成这一镜的视频', params: [NOTE_PARAM] },
 ]

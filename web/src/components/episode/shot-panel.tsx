@@ -128,7 +128,7 @@ export function ShotPanel({
         {page === 'info' ? (
           <ShotInfo shot={shot} state={params} frame={slot('first_frame')} voice={slot('voice')} />
         ) : (
-          // 重写落库后两段值一变整块重挂，本地草稿才会换成新稿。
+          // 重写保存后两段值变化，整块重新挂载，本地草稿才会换成新稿。
           <ShotEditor key={`${shot.image_prompt}\0${shot.motion_prompt}`} shot={shot} state={params} polish={polish} />
         )}
       </div>
@@ -261,12 +261,12 @@ function ShotSheet({ shot, projectId, open, onOpenChange }: { shot: Shot; projec
     seconds: shot.seconds,
   })
   const save = useSaveShot(shot.id)
-  // 出镜没改就不发：后端会把引用重新落到最新锁定版，原样发回也可能换掉版本、把画面标为过时。
+  // 出镜未改动就不发送：后端会把引用重新指向最新锁定版，原样发回也可能换掉版本、把画面标为过时。
   const castChanged = cast.length !== shot.cast.length || shot.cast.some((member) => !cast.includes(member.asset_id))
   const castOptions = (project.data?.cast ?? []).filter((member) => member.state === 'locked' || cast.includes(member.id))
   const toggleCast = (id: string) => setCast(cast.includes(id) ? cast.filter((item) => item !== id) : [...cast, id])
 
-  // TODO(Lysander): 只有分离配音限一镜一个说话人，这条提示还没按音轨模式区分，原生音轨下会误报。
+  // TODO(Lysander): 只有单独配音限一镜一个说话人，这条提示还没按声音来源区分，视频自带声音时会误报。
   const speakers = new Set(draft.utterances.map((line) => line.speaker).filter((name) => name !== null))
 
   return (
@@ -357,7 +357,7 @@ function useDeleteShot() {
   })
 }
 
-// 主面与抽屉各存各的字段，所以只发 patch：整条发回会互相覆盖。
+// 主面板与抽屉各自保存不同字段，所以只发 patch：整条发回会互相覆盖。
 function useSaveShot(shotId: string) {
   const queryClient = useQueryClient()
   return useMutation({

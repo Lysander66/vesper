@@ -62,7 +62,7 @@ export function ArtifactSlot({
       )}
       {artifact && <ArtifactVersions owner={owner} kind={kind} version={artifact.version} />}
       {canLaunch && (
-        // 禁用的按钮收不到鼠标事件，title 挂在外层才提示得出来。
+        // 禁用的按钮不响应鼠标事件，title 放在外层才能显示。
         <span title={blockedReason} className='shrink-0'>
           <Button variant='outline' size='sm' className='h-7 px-2 text-xs' disabled={busy || status === 'running' || blockedReason !== undefined} onClick={onGenerate}>
             {artifact ? '重新生成' : '生成'}

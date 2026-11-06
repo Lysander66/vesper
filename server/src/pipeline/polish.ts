@@ -73,7 +73,7 @@ export async function polishShot(ctx: GenContext, shot: ShotRow): Promise<void> 
     },
   })
 
-  const reply = parseReply(text, draftSchema, '镜头提示词')
+  const reply = parseReply(text, draftSchema, '分镜提示词')
   const audio = effectiveAudioMode(ctx.db, ctx.projectId, getProject(ctx.db, ctx.projectId).audio_mode)
   updateShot(ctx.db, shot.id, { imagePrompt: reply.image_prompt, motionPrompt: reply.motion_prompt, sound: reply.sound, utterances: withHow(utterancesOf(shot), reply.lines) }, audio)
 }

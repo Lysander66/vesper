@@ -23,7 +23,7 @@ token 的取值在 `src/styles/theme.css`，骨架组件在 `src/components/layo
 
 ## 字体与字号
 
-- 正文 Inter，中文回落到 PingFang SC 或系统黑体。全局开了 `tnum`，不再逐处写 `tabular-nums`。
+- 正文 Inter，中文用 PingFang SC，没有时用系统黑体。全局开了 `tnum`，不再逐处写 `tabular-nums`。
 - `font-mono` 用于 ID、时长、计数这类元数据。
 - `font-serif` 只用于首页的诗句题头，`font-cormorant` 只用于 logo。
 - 字号档：`text-2xs` 元数据与状态标签，`text-xs` 辅助说明与表单标签，`text-sm` 正文、按钮、分区标题，`text-base` 弹窗标题，`text-lg` 页面 h1。

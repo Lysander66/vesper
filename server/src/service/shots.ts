@@ -24,7 +24,7 @@ import {
 import { getAsset, getAssetVersion, latestVersionOf } from '../repo/assets'
 import { getProject, listEpisodes } from '../repo/projects'
 
-/** 改分镜并在同一事务里标过时，返回真被标掉的产物种类（没生成过的不算）。 */
+/** 改分镜并在同一事务里标过时，返回真被标为过时的产物种类（没生成过的不算）。 */
 export function updateShot(db: Database, id: string, patch: ShotPatch, audio: AudioMode): ArtifactKind[] {
   const shot = getShot(db, id)
   return db.transaction(() => {
@@ -71,7 +71,7 @@ export function followLatestVersion(db: Database, assetId: string): number {
   return count
 }
 
-/** 人工挑出镜角色：只收已锁定的资产，引用落到各自最新的锁定版本。 */
+/** 人工挑出镜角色：只接受已锁定的资产，引用落到各自最新的锁定版本。 */
 export function castRefs(db: Database, assetIds: readonly string[]): ShotRef[] {
   return assetIds.map((id) => {
     const asset = getAsset(db, id)

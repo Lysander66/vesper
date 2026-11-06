@@ -10,7 +10,7 @@ export interface Segment {
   readonly nativeAudio?: boolean
   readonly seconds: number
   readonly gainDb?: number
-  /** 这一段前面的接缝过黑场，不置即硬切。 */
+  /** 这一段前面的接缝过黑场，不填即硬切。 */
   readonly fadeIn?: boolean
 }
 
@@ -46,7 +46,7 @@ export function assembleArgs(segments: readonly Segment[], output: string, optio
   const filters: string[] = []
   const concatInputs: string[] = []
 
-  // 自带音轨的段只占一路输入，所以输入序号逐路递增，不按段下标算。
+  // 用视频自带声音的段只占一路输入，所以输入序号逐路递增，不按段下标算。
   let next = 0
   segments.forEach((segment, i) => {
     const d = segment.seconds
@@ -163,7 +163,7 @@ export function loudnessArgs(input: string, ffmpeg = 'ffmpeg'): string[] {
   return [ffmpeg, '-hide_banner', '-nostats', '-i', input, '-vn', '-af', 'loudnorm=print_format=json', '-f', 'null', '-']
 }
 
-/** 全静音时响度是 -inf，返回 null，这一段不调。 */
+/** 全静音时响度是 -inf，返回 null，这一段不调音量。 */
 export function parseLoudness(stderr: string): Loudness | null {
   const start = stderr.lastIndexOf('{')
   if (start < 0) return null
@@ -214,7 +214,7 @@ function fadeFor(seconds: number, fadeSeconds: number): number {
   return seconds > fadeSeconds * 3 ? fadeSeconds : 0
 }
 
-/** 定长小数位，命令里不出现浮点尾数。 */
+/** 最多保留三位小数，命令里不出现浮点尾数。 */
 function num(value: number): string {
   return String(Math.round(value * 1000) / 1000)
 }

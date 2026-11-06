@@ -1,5 +1,3 @@
-/** 工作台：各作品进度、今天的调用、跨作品的待办数。 */
-
 import type { Database } from 'bun:sqlite'
 
 import { HOME_STAGES, type HomeProject, type HomePulse, type HomeView, type OwnerKind, type SlotStatus } from '@vesper/shared'
@@ -115,7 +113,6 @@ function todayCounts(db: Database) {
   }
 }
 
-/** 今天发起的每一次调用。 */
 function todayPulse(db: Database): HomePulse[] {
   return jobPulseSince(db, midnight()).map((row) => ({
     id: row.id,

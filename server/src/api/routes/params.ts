@@ -1,5 +1,3 @@
-/** 各组路由共用的入参解析：发起时的临时参数，以及路径里的产物位。 */
-
 import { optionalBody, z, BadRequest } from '../http'
 import type { LaunchInput } from '../tasks'
 import {
@@ -15,7 +13,7 @@ import {
 } from '@vesper/shared'
 import { PROMPT_IDS } from '../../pipeline/prompts'
 
-/** 按角色分的端点参数，值不校验形状。用 `partialRecord`：zod 4 的 `record` 要求枚举每个键都出现。 */
+/** 按模型类别分的端点参数，值不校验形状。用 `partialRecord`：zod 4 的 `record` 要求枚举的每个键都出现。 */
 const OVERRIDES_SCHEMA = z
   .partialRecord(z.enum(BINDING_ROLES), z.record(z.string(), z.unknown()))
   .optional()
@@ -28,7 +26,6 @@ const PROMPT_ARGS_SCHEMA = z
 /** 按 purpose 分：一次发起可能画五张设定图，按 role 分会互相覆盖。 */
 const PROMPT_TEXT_SCHEMA = z.record(z.string(), z.string()).optional()
 
-/** 各发起接口共有的临时参数。 */
 export const EXTRA_SCHEMA = {
   params: OVERRIDES_SCHEMA,
   prompt_args: PROMPT_ARGS_SCHEMA,

@@ -1,5 +1,3 @@
-/** 按语速估算时长，只作参考，不参与自动决策。 */
-
 /** 不计空白。标点按一个字计，近似断句停顿。 */
 export function countChars(text: string): number {
   return text.replace(/\s+/gu, '').length

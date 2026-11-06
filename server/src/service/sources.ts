@@ -1,4 +1,4 @@
-/** 原文与分集：分集须盖满原文，定稿后不可改，定稿时结算过时。 */
+/** 原文与分集：分集须盖满原文，定稿后不可改，定稿时标为过时。 */
 
 import type { Database } from 'bun:sqlite'
 
@@ -72,7 +72,7 @@ export function replaceSourceEpisodes(db: Database, sourceId: string, drafts: re
 
 export interface EpisodeCountResult {
   readonly episodes: number
-  /** 从第几集起改了号（1 基）。null 表示集号一个没动。 */
+  /** 从第几集起改了号（从 1 起）。null 表示集号一个没动。 */
   readonly renumberedFrom: number | null
 }
 
@@ -83,7 +83,7 @@ export interface FreezeResult {
   readonly staleArtifacts: number
 }
 
-/** 定稿并结算过时。只有区间变了的集才标下游过时，追加原文不影响已有的集。 */
+/** 定稿并标为过时。只有区间变了的集才标下游过时，追加原文不影响已有的集。 */
 export function freezeSource(db: Database, sourceId: string): FreezeResult {
   const source = getSource(db, sourceId)
   if (source.plan_state === 'frozen') throw new Conflict('这份原文已经定稿')
@@ -121,7 +121,7 @@ export function freezeSource(db: Database, sourceId: string): FreezeResult {
   })()
 }
 
-/** 只改状态，不标过时；差异在再次定稿时结算。 */
+/** 只改状态，不标过时；差异在再次定稿时处理。 */
 export function unfreezeSource(db: Database, sourceId: string): void {
   const source = getSource(db, sourceId)
   if (source.plan_state === 'draft') throw new Conflict('这份原文尚未定稿')

@@ -20,7 +20,7 @@ export function JobCalls({ jobId }: { jobId: string }) {
   return (
     <div className='space-y-3'>
       {job.error && <p className='text-sm text-destructive'>{job.error}</p>}
-      {envVar && <p className='font-mono text-2xs text-muted-foreground'>下面的 cURL 重放前，先 export {envVar}=…</p>}
+      {envVar && <p className='font-mono text-2xs text-muted-foreground'>在终端运行下方 cURL 前，先 export {envVar}=…</p>}
       <Params json={job.params} />
       {job.inputs !== '{}' && <Inputs json={job.inputs} />}
       {calls.map((call) => (
@@ -80,11 +80,11 @@ function Inputs({ json }: { json: string }) {
   const refs = Object.values(parsed ?? {})
     .flatMap((value) => (Array.isArray(value) ? (value as unknown[]) : [value]))
     .filter((item): item is AssetRef => typeof item === 'object' && item !== null && 'path' in item)
-  if (refs.length === 0) return <CodeBlock label='输入图片' text={prettyJson(json)} />
+  if (refs.length === 0) return <CodeBlock label='输入图像' text={prettyJson(json)} />
 
   return (
     <div className='min-w-0 space-y-0.5'>
-      <p className='text-xs text-muted-foreground'>输入图片</p>
+      <p className='text-xs text-muted-foreground'>输入图像</p>
       {refs.map((ref) => (
         <p key={ref.placeholder ?? ref.path} className='truncate font-mono text-xs' title={ref.path}>
           {ref.placeholder && <span className='text-ink3'>{ref.placeholder} ← </span>}

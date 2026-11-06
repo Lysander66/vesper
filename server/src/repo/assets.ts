@@ -1,5 +1,3 @@
-/** assets、asset_files、asset_versions 三张表的读写。 */
-
 import type { Database } from 'bun:sqlite'
 
 import {
@@ -117,7 +115,7 @@ export function findProjectAsset(db: Database, projectId: string, category: Asse
   return db.query('SELECT * FROM assets WHERE project_id = ? AND category = ? AND name = ?').get(projectId, category, name) as AssetRow | null
 }
 
-/** 每个图位当前在用的那张，即该图位最新的一行。 */
+/** 每种设定图类型当前在用的那张，即该类型最新的一行。 */
 export function currentAssetFiles(db: Database, assetId: string): AssetFileRow[] {
   const files = listAssetFiles(db, assetId)
   return files.filter((f, i) => files.findIndex((g) => g.role === f.role) === i)
@@ -195,7 +193,7 @@ export function getAssetFile(db: Database, assetId: string, fileId: number): Ass
   return row
 }
 
-/** 参考图的优先顺序。图位有限，多数情况下每样资产只取第一张。 */
+/** 参考图的优先顺序。参考图名额有限，多数情况下每样资产只取第一张。 */
 export const REFERENCE_ROLES: readonly AssetFileRole[] = [
   'full_body',
   'establishing',
@@ -287,13 +285,12 @@ export function latestVersionOf(db: Database, assetId: string): AssetVersionRow 
     .get(assetId) as AssetVersionRow | null
 }
 
-/** 参考图路径。指定 look 时先取那一张，缺了按固定顺序取。默认只取一张，避免一镜引用多样资产时超出端点图位。 */
+/** 参考图路径。指定 look 时先取那一张，缺了按固定顺序取。默认只取一张，避免一镜引用多样资产时超出端点的参考图上限。 */
 export function referenceImages(version: LockedVersion, limit = 1, look?: AssetFileRole): string[] {
   const roles = look !== undefined && REFERENCE_ROLES.includes(look) ? [look, ...REFERENCE_ROLES.filter((r) => r !== look)] : REFERENCE_ROLES
   return roles.flatMap((role) => version.files.filter((f) => f.role === role).map((f) => f.path)).slice(0, limit)
 }
 
-/** 这张参考图属于哪个图位。 */
 export function roleOfImage(version: LockedVersion, path: string): AssetFileRole | undefined {
   return version.files.find((f) => f.path === path)?.role
 }

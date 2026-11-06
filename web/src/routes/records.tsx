@@ -14,6 +14,7 @@ import { CopyButton } from '@/components/ui/copy-button'
 import { Input } from '@/components/ui/input'
 import { Segmented } from '@/components/ui/segmented'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { titleOf } from '@/components/binding-form'
 import { formatMoney, formatUsage } from '@/components/cost'
 import { CodeBlock, JobCalls } from '@/components/job-calls'
 
@@ -64,7 +65,7 @@ function RecordsPage() {
   const commands = useQuery({ queryKey: ['commands', owner ?? 'all'], queryFn: () => api.commands(owner) })
   const cost = useQuery({ queryKey: ['jobs-cost', owner ?? 'all'], queryFn: () => api.jobsCost(owner) })
   const endpoints = useQuery({ queryKey: ['endpoints'], queryFn: api.endpoints })
-  const endpointName = (id: string) => endpoints.data?.find((item) => item.id === id)?.name ?? id
+  const endpointName = (id: string) => titleOf(endpoints.data ?? [], id) ?? endpoints.data?.find((item) => item.id === id)?.name ?? id
 
   const [status, setStatus] = useState<StatusFilter>('all')
   const [purpose, setPurpose] = useState<string>(ALL_PURPOSES)
@@ -114,7 +115,7 @@ function RecordsPage() {
           </SelectContent>
         </Select>
 
-        <Input className='w-64 bg-card' placeholder='搜索任务 ID、归属 ID、端点、报错或用途' value={keyword} onChange={(event) => setKeyword(event.target.value)} />
+        <Input className='w-64 bg-card' placeholder='搜索任务 ID、归属 ID、接口、错误信息或用途' value={keyword} onChange={(event) => setKeyword(event.target.value)} />
 
         <span className='font-mono text-2xs text-ink3'>{rows.length === all.length ? `${all.length} 条` : `${rows.length} / ${all.length} 条`}</span>
       </div>

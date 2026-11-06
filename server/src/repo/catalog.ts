@@ -82,7 +82,7 @@ export function listEndpoints(db: Database): EndpointView[] {
 
 export function getEndpoint(db: Database, id: string): EndpointView {
   const row = db.query('SELECT * FROM endpoints WHERE id = ?').get(id) as EndpointRow | null
-  if (!row) throw new NotFound(`端点 ${id}`)
+  if (!row) throw new NotFound(`接口 ${id}`)
   return { id: row.id, name: row.name, kind: row.kind, definition: parseDefinition(JSON.parse(row.definition)) }
 }
 
@@ -137,7 +137,7 @@ export function getCredential(db: Database, id: string): CredentialRow {
   return row
 }
 
-/** 给导出 cURL 算打码形用，凭证已删时回 undefined。 */
+/** 给导出 cURL 算脱敏后的 key 用，凭证已删时回 undefined。 */
 export function findApiKey(db: Database, credentialId: string): string | undefined {
   const row = db.query('SELECT api_key FROM credentials WHERE id = ?').get(credentialId) as { api_key: string } | null
   return row?.api_key || undefined
@@ -198,7 +198,7 @@ export function findBinding(db: Database, projectId: string | null, role: Bindin
   }
 }
 
-/** 删掉作品自己的绑定，该角色改用全局默认。 */
+/** 删掉作品自己的绑定，该模型类别改用全局默认。 */
 export function removeBinding(db: Database, projectId: string, role: BindingRole): void {
   db.query('DELETE FROM bindings WHERE project_id = ? AND role = ?').run(projectId, role)
 }

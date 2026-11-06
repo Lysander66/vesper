@@ -107,7 +107,7 @@ function orderedRefs(db: Database, shot: ShotRow, tail: string | null): RefSlot[
   ]
 }
 
-/** 锁定版里没有可作参考的图就不占图位。 */
+/** 锁定版里没有可作参考的图就不占参考图名额。 */
 function fromVersions(picks: readonly { version: LockedVersion; look?: AssetFileRole | undefined }[]): RefSlot[] {
   return picks.flatMap(({ version, look }) => {
     const image = referenceImages(version, 1, look)[0]
@@ -119,7 +119,7 @@ function fromVersions(picks: readonly { version: LockedVersion; look?: AssetFile
       kind: kind?.label ?? '参考',
       name: version.person,
       anchor: anchorText(version),
-      // 职责按实际挑中的图位说明，服装图不能当长相参考。
+      // 职责按实际挑中的设定图类型说明，服装图不能当长相参考。
       duty: (role !== undefined ? duties[role] : undefined) ?? kind?.duty,
     }
     return [{ image, note }]
@@ -156,7 +156,7 @@ export interface ClipPlan {
   readonly kept: readonly RefSlot[]
   readonly dropped: readonly RefSlot[]
   readonly limit: number
-  /** 取到端点档位后的时长，端点不收时长时为 undefined。 */
+  /** 取到端点档位后的时长，端点不接受时长时为 undefined。 */
   readonly duration: number | undefined
   /** 没有已锁定同名角色的说话人，用默认音色。 */
   readonly unregisteredSpeakers: readonly string[]
@@ -217,7 +217,7 @@ function pickSamples(db: Database, shot: ShotRow, lines: readonly Utterance[], k
     const seconds = measure(path)
     if (seconds === null) missed.push({ name, reason: '读不出样本时长' })
     else if (seconds < SAMPLE_SECONDS.min) missed.push({ name, reason: `样本 ${seconds.toFixed(1)} 秒，短于 ${SAMPLE_SECONDS.min} 秒` })
-    else if (eligible.length >= limit) missed.push({ name, reason: `端点最多接 ${limit} 段` })
+    else if (eligible.length >= limit) missed.push({ name, reason: `接口最多接受 ${limit} 段` })
     else eligible.push({ name, path, seconds })
   }
   const share = Math.floor((SAMPLE_SECONDS.total / Math.max(eligible.length, 1)) * 10) / 10
@@ -237,7 +237,7 @@ function probeSeconds(path: string): number | null {
   return proc.exitCode === 0 && Number.isFinite(seconds) ? seconds : null
 }
 
-/** 只在原生音轨模式下给，不限说话人数。 */
+/** 只在视频自带声音时给，不限说话人数。 */
 function speechFor(db: Database, shot: ShotRow, audio: AudioMode): { input: Pick<ClipInput, 'speech'>; unregistered: string[] } {
   if (audio !== 'native') return { input: {}, unregistered: [] }
   const lines = utterancesOf(shot).filter((line) => line.text.trim() !== '')
@@ -274,7 +274,7 @@ export function speakerVoice(db: Database, shot: ShotRow, speaker: string): { vo
   return { voice: '', sample: null, registered: false }
 }
 
-/** 快照里同一图位新的在前，第一条即选定的样本。 */
+/** 快照里同一类型新的在前，第一条即选定的样本。 */
 function versionVoice(version: LockedVersion): { voice: string; sample: string | null } {
   return { voice: characterIn(version).voice, sample: version.files.find((f) => f.role === 'voice_sample')?.path ?? null }
 }

@@ -1,5 +1,3 @@
-/** 设置：端点、提示词模板、凭证与绑定。 */
-
 import { BINDING_ROLES, type BindingRole } from '@vesper/shared'
 
 import type { Database } from 'bun:sqlite'
@@ -12,11 +10,11 @@ import { PROMPT_TEMPLATES } from '../../pipeline/prompts'
 
 export function registerCatalog(on: Register, db: Database): void {
   on('GET', '/api/endpoints', () => json(listEndpoints(db)))
-  // 前端按模板自述生成参数输入框。
+  // 前端按模板的参数说明生成输入框。
   on('GET', '/api/prompts', () => json(PROMPT_TEMPLATES))
   on('GET', '/api/credentials', () => json(listCredentials(db)))
 
-  // 名称可留空，界面改为显示 Base URL。
+  // 名称留空时界面显示 Base URL。
   on('POST', '/api/credentials', async (request) => {
     const input = await body(
       request,

@@ -29,7 +29,7 @@ export function ShotsTab({ view }: { view: EpisodeView }) {
   const insert = useInsertShot(view.episode.id)
   const [page, setPage] = useState<PanelPage>('info')
   const [playing, setPlaying] = useState(false)
-  // 每次合成任务跳过来都要切回合成版，所以跟着 flash 的变化走，不只看初值。
+  // 每次从合成任务跳转过来都要切回合成版，所以跟随 flash 的变化，不只看初值。
   const [mode, setMode] = useState<Mode>(flash ? 'film' : 'shots')
   const [lastFlash, setLastFlash] = useState(flash)
   if (flash !== lastFlash) {

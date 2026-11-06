@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { locateAnchors } from '../src/domain/anchor'
+import { overlongShots } from '../src/domain/beats'
 import { titleOf } from '../src/domain/import'
 import { checkFileSpans } from '../src/domain/spans'
 import { downstreamOf, impactOfShotFields, impactOfVersionSwap } from '../src/domain/stale'
@@ -101,5 +102,14 @@ describe('导入时的默认集名', () => {
   test('首行不是章节标题时用文件名，去掉章号前的书名', () => {
     expect(titleOf({ name: 'dir/云间旧事-第3章.txt', text: '正文' })).toBe('第3章')
     expect(titleOf({ name: '序章.txt', text: '正文' })).toBe('序章')
+  })
+})
+
+describe('台词念不完的镜头', () => {
+  // 语速 4 字/秒，每句另加 0.3 秒换气。
+  test('只报出超过上限的镜头，给出下标与念完的秒数', () => {
+    const shots = [['十个字十个字十个字十'], ['二十个字二十个字二十个字二十个字二十个', '二十个字二十个字二十个字二十个字二十个'], []]
+
+    expect(overlongShots(shots, 4, 8)).toEqual([{ index: 1, seconds: 10.1 }])
   })
 })

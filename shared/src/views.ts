@@ -1,5 +1,3 @@
-/** 接口响应的形状，server 与 web 共用。 */
-
 import type {
   Aspect,
   Assemblability,
@@ -305,7 +303,7 @@ export interface Shot {
   clip_source: ClipSource
   image_prompt: string
   motion_prompt: string
-  /** 这一镜的声音，按主次写。视频自带音轨时写进视频提示词。 */
+  /** 这一镜的声音，按主次写。视频自带声音时写进视频提示词。 */
   sound: string
   utterances: readonly Utterance[]
   /** 出自第几个节拍，-1 表示未归属。 */
@@ -351,7 +349,7 @@ export interface ShotPreview {
   max_refs: number
   /** 按端点档位取整后的视频时长，秒。null 表示端点不接受时长参数。 */
   duration: number | null
-  /** 尚未配置调用方式的角色。此时上限与时长按不限计算，生成会失败。 */
+  /** 尚未绑定端点的模型类别。此时上限与时长按不限计算，生成会失败。 */
   unbound: readonly BindingRole[]
 }
 
@@ -402,7 +400,7 @@ interface AssetViewBase {
   /** 换装才有：本体角色的 id。 */
   base_id: string | null
   files: readonly AssetFile[]
-  /** 最近一次锁定时每个图位用的那张，没锁过为空。 */
+  /** 最近一次锁定时每种设定图类型用的那张，没锁过为空。 */
   locked_paths: readonly string[]
 }
 
@@ -412,7 +410,7 @@ export type AssetView =
   | (AssetViewBase & { category: 'scene'; data: SceneData })
   | (AssetViewBase & { category: 'prop'; data: PropData })
 
-/** 素材库里的一件，每个图位只有一张。 */
+/** 素材库里的一件，每种设定图类型只有一张。 */
 export type LibraryItem = AssetView & {
   /** 从哪部作品存进来的。 */
   tags: readonly string[]
@@ -446,7 +444,7 @@ export interface LockBatch {
 export interface AssetPreview {
   asset_id: string
   looks: readonly AssetPreviewLook[]
-  /** 尚未配置调用方式的角色，生成会失败。 */
+  /** 尚未绑定端点的模型类别，生成会失败。 */
   unbound: readonly BindingRole[]
 }
 
@@ -604,7 +602,7 @@ export interface EndpointDefinition {
     title?: string
     docs?: string
     notes?: string
-    /** 同一产出下首选这条，设置页排在最前并预选。 */
+    /** 同类端点中首选这条，设置页排在最前并预选。 */
     preferred?: 'yes'
     /** 上一代接口，设置页排在最后。 */
     legacy?: 'yes'
@@ -615,12 +613,12 @@ export interface EndpointDefinition {
   capabilities?: EndpointCapabilities & {
     /** 验证过的模型，作为候选项，不限制填别的。 */
     models?: string[] | undefined
-    /** 随型号变的档位，键是型号名。 */
+    /** 随模型变的档位，键是模型名。 */
     by_model?: Record<string, EndpointCapabilities> | undefined
   }
 }
 
-/** 一款模型接受的参数范围。 */
+/** 一个模型接受的参数范围。 */
 export interface EndpointCapabilities {
   resolutions?: string[] | undefined
   durations?: DurationSpec | undefined
@@ -633,7 +631,7 @@ export interface EndpointCapabilities {
   prompt_style?: 'h3' | undefined
 }
 
-/** `by_model` 里写了的字段整项覆盖端点级，端点级是默认那款的档位。 */
+/** `by_model` 里写了的字段整项覆盖端点级，端点级是默认模型的档位。 */
 export function capabilitiesFor(capabilities: EndpointDefinition['capabilities'], model: unknown): EndpointCapabilities {
   if (!capabilities) return {}
   const override = typeof model === 'string' ? capabilities.by_model?.[model] : undefined

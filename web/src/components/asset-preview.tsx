@@ -14,7 +14,7 @@ export function AssetPreview({ assetId, state }: { assetId: string; state?: Laun
   })
 
   if (preview.isError) {
-    return <div className='rounded-lg border bg-card p-3 text-xs text-fail'>提示词计算失败：{preview.error.message}</div>
+    return <div className='rounded-lg border bg-card p-3 text-xs text-fail'>提示词预览失败：{preview.error.message}</div>
   }
   if (!preview.data) return null
 

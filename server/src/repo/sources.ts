@@ -1,5 +1,3 @@
-/** project_sources 表的读写。 */
-
 import type { Database } from 'bun:sqlite'
 
 import type { PlanState } from '@vesper/shared'

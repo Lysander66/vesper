@@ -238,7 +238,7 @@ function BeatCard({
         )}
         {chars > 0 && (
           <span className='font-mono text-2xs text-ink3'>
-            {beat.utterances.length} 句 · 念完约 {Math.ceil(chars / speechRate)}s
+            {beat.utterances.length} 句 · 朗读约 {Math.ceil(chars / speechRate)}s
           </span>
         )}
         <div className='flex flex-1 items-center justify-end gap-1'>

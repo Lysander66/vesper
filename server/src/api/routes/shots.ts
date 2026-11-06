@@ -1,5 +1,3 @@
-/** 单镜：修改、删除与单镜生成。 */
-
 import type { Database } from 'bun:sqlite'
 import { CAMERA_MOVES, CLIP_SOURCES, SHOT_JOINS, SHOT_SIZES } from '@vesper/shared'
 

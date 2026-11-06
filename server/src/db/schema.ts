@@ -22,14 +22,14 @@ const SCHEMA = `
     deleted_at  TEXT
   );
 
-  -- 流水线各阶段用哪个端点。project_id 为空是全局默认，作品可以覆盖其中某几个角色。
+  -- 流水线各阶段用哪个端点。project_id 为空是全局默认，作品可以覆盖其中某几个模型类别。
   CREATE TABLE IF NOT EXISTS bindings (
     id             TEXT PRIMARY KEY,
     project_id     TEXT REFERENCES projects(id) ON DELETE CASCADE,
     role           TEXT NOT NULL CHECK (role IN ('text', 'image', 'video', 'tts')),
     endpoint_id    TEXT NOT NULL REFERENCES endpoints(id),
     credential_id  TEXT NOT NULL REFERENCES credentials(id),
-    -- 该角色每次调用固定带的标量参数，如 model、resolution。
+    -- 该模型类别每次调用固定带的标量参数，如 model、resolution。
     params         TEXT NOT NULL DEFAULT '{}',
     updated_at     TEXT NOT NULL
   );

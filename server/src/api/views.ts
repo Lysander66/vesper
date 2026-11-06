@@ -131,7 +131,7 @@ export function bindingViews(db: Database, projectId: string | null): Binding[] 
   return listBindings(db, projectId).map((binding) => ({
     role: binding.role,
     endpoint_id: binding.endpointId,
-    endpoint_name: endpoints.get(binding.endpointId) ?? '（调用方式已删除）',
+    endpoint_name: endpoints.get(binding.endpointId) ?? '（接口已删除）',
     credential_id: binding.credentialId,
     credential_name: credentials.get(binding.credentialId) ?? '（凭证已删除）',
     params: binding.params,
@@ -153,7 +153,7 @@ export function episodeView(db: Database, episodeId: string): EpisodeView {
     source: source.text.slice(episode.source_start, episode.source_end),
     target_seconds: project.target_seconds,
     speech_rate: project.speech_rate,
-    /** 已按视频端点能力折算的音轨模式。 */
+    /** 已按视频端点能力换算的声音来源。 */
     audio_mode: audioMode,
     continuity_mode: project.continuity_mode,
     shots: listShots(db, episodeId).map((shot) => ({
@@ -194,7 +194,7 @@ export function libraryItems(db: Database): LibraryItem[] {
   return listLibraryAssets(db).map((asset) => ({ ...assetView(db, asset.id), tags: parseJson<string[]>(asset.tags, []), created_at: asset.created_at }))
 }
 
-/** 最近一次锁定时每个图位用的那张。解锁后镜头仍引用它，照样返回。 */
+/** 最近一次锁定时每种设定图类型用的那张。解锁后镜头仍引用它，照样返回。 */
 function lockedPaths(db: Database, assetId: string): string[] {
   const latest = latestVersionOf(db, assetId)
   if (latest === null) return []
@@ -263,9 +263,8 @@ export interface PreviewInput {
   readonly audio?: AudioMode | undefined
   readonly continuity?: ContinuityMode | undefined
   readonly promptArgs?: Partial<Record<PromptId, PromptArgs>> | undefined
-  /** 换型号会连带换掉时长档位与参考图上限，预览也要按它算。 */
+  /** 换模型会连带换掉时长档位与参考图上限，预览也要按它算。 */
   readonly overrides?: Partial<Record<BindingRole, Record<string, unknown>>> | undefined
-  /** 手写的提示词，按 purpose 分。 */
   readonly promptText?: Record<string, string> | undefined
 }
 
@@ -313,14 +312,14 @@ export function shotPreview(db: Database, shot: ShotRow, input: PreviewInput = {
   }
 }
 
-/** 上一镜视频文件还在才取得到末帧；不在时实发少一张参考图，预览同样少。 */
+/** 上一镜视频文件还在才取得到末帧；不在时实际发送少一张参考图，预览同样少。 */
 function tailFor(db: Database, previous: ShotRow | null): string | null {
   const clip = previous === null ? null : clipOf(db, previous.id)
   if (clip === null || !existsSync(clip)) return null
   return tailPath(clip)
 }
 
-/** 未绑定模型时上限与档位按不限算，缺的环节由 `unbound` 报出。 */
+/** 未绑定模型时上限与档位按不限算，缺的模型类别由 `unbound` 报出。 */
 function boundCapabilities(db: Database, projectId: string, role: BindingRole, override: Record<string, unknown> | undefined): EndpointCapabilities | null {
   try {
     return endpointCapabilities(db, projectId, role, override)

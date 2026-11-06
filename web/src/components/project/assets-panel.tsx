@@ -17,7 +17,7 @@ export function AssetsPanel({ view, flash }: { view: ProjectView; flash: string 
   const unlockedCast = view.cast.filter((member) => member.state !== 'locked').length
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  // 自己存一份：`?asset=` 闪完就会被抹掉，面板不能跟着关。
+  // 单独保存一份：`?asset=` 高亮结束后会被清除，面板不能随之关闭。
   const [taken, setTaken] = useState<string>()
   if (flash !== undefined && flash !== taken) {
     setTaken(flash)

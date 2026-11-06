@@ -74,7 +74,7 @@ The repo ships agent skills under [`.agents/skills`](./.agents/skills), usable f
 Make the first episode from examples/三国演义-草船借箭.txt
 ```
 
-It imports the text and runs the whole pipeline, pausing for your sign-off three times: when the reference sheets are ready to lock, when the storyboard review comes back, and when the first few sample shots are done.
+It imports the text and runs the whole pipeline, pausing for your sign-off three times: before any reference sheets are generated, before video generation, and once the first episode is assembled.
 
 ## Contributing
 

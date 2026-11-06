@@ -28,7 +28,7 @@ export function parseReply<T>(text: string, schema: z.ZodType<T>, what: string):
   return result.data
 }
 
-/** 先剥围栏，再退到「第一个 { 到最后一个 }」。 */
+/** 先去掉代码围栏；没有围栏时取第一个 { 到最后一个 } 之间。 */
 function extractJson(text: string): string | null {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text)
   const body = fenced?.[1] ?? text

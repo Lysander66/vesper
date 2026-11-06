@@ -1,5 +1,3 @@
-/** 原文这一组：追加、改写，以及分集规划、定稿与按批提取资产。 */
-
 import type { Database } from 'bun:sqlite'
 
 import { renumberNote, type EpisodeSuggestionView, type SourceMutationView } from '@vesper/shared'

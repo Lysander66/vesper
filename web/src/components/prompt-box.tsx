@@ -1,4 +1,4 @@
-/** 改写只进本次参数，不写回设定，也不会让产物过时。 */
+/** 改写只用于本次运行，不写回设定，也不会让产物过时。 */
 import { useState, type ReactNode } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'

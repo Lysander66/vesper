@@ -55,7 +55,7 @@ export interface AnchorSpan {
 }
 
 export type AnchorResult =
-  /** 最后一句末句在原文里的位置。末段总会补齐到文末，回复是否写全要看它。 */
+  /** 最后一集末句在原文里的位置。末段总会补齐到文末，回复是否写全要看它。 */
   | { readonly ok: true; readonly spans: AnchorSpan[]; readonly reached: number }
   | { readonly ok: false; readonly reasons: string[] }
 

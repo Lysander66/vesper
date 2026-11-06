@@ -19,13 +19,14 @@ export function ownerLine(kind: string | null, id: string | null): string {
 }
 
 const TASK_LABEL: Record<string, string> = {
-  plan: '分集规划',
-  episode_plan: '分集规划',
+  plan: '分集',
+  episode_plan: '分集',
   asset_extract: '提取资产',
   looks: '设定图',
   project_looks: '批量生成设定图',
   voice_sample: '试音',
-  beats: '叙事节拍',
+  beats: '写节拍',
+  shot_prompt: '分镜提示词',
   shots: '拆分镜',
   review: '审查',
   produce_shot: '单镜生成',

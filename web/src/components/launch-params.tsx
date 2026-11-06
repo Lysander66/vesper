@@ -39,7 +39,7 @@ const ROLE_ICON: Record<BindingRole, ComponentType<{ className?: string }>> = {
   tts: AudioLines,
 }
 
-/** 流水线自己算的参数：在这里改画幅，首帧与视频就对不上了。 */
+/** 由流水线计算的参数：在这里改画幅会让首帧与视频对不上。 */
 const PIPELINE_OWNED = new Set(['prompt', 'duration', 'size', 'aspect_ratio', 'n'])
 
 interface ParamSpec {
@@ -353,7 +353,7 @@ export function LaunchParamsFields({ state }: { state: LaunchParamsState }) {
           {pickable.map((section) => (
             <EndpointPicker key={section.role} projectId={state.projectId} role={section.role} bindings={state.bindings} className='min-w-0' />
           ))}
-          {state.audio !== null && <ModeField title='音轨' value={state.audio} options={AUDIO_MODES} labels={AUDIO_MODE_LABEL} onChange={state.setAudio} />}
+          {state.audio !== null && <ModeField title='声音来源' value={state.audio} options={AUDIO_MODES} labels={AUDIO_MODE_LABEL} onChange={state.setAudio} />}
           {state.continuity !== null && <ModeField title='末帧参考' value={state.continuity} options={CONTINUITY_MODES} labels={CONTINUITY_MODE_LABEL} onChange={state.setContinuity} />}
         </Block>
       )}
@@ -499,7 +499,7 @@ function buildSections(roles: readonly BindingRole[], bindings: readonly Binding
   return sections
 }
 
-/** `enum_maps` 是整个端点共用的，拿它当候选会列出其他型号才有的档位。 */
+/** `enum_maps` 由整个端点共用，拿它当候选会列出其他模型才有的档位。 */
 function optionsFor(definition: EndpointSummary['definition'], key: string, capabilities: EndpointCapabilities): string[] {
   if (key === 'resolution') return capabilities.resolutions ?? []
   if (key === 'model') return definition.capabilities?.models ?? []
@@ -510,9 +510,9 @@ function limitsOf(caps: EndpointCapabilities, role: BindingRole): string[] {
   const out: string[] = []
   if (caps.start_image === 'yes') out.push('支持首帧')
   if (caps.durations) out.push(`时长 ${describeDurations(caps.durations)}`)
-  if (role === 'video') out.push(caps.audio === 'native' ? '自带音轨' : '无音轨')
+  if (role === 'video') out.push(caps.audio === 'native' ? '视频自带声音' : '视频无声音')
   if (caps.max_reference_images !== undefined) out.push(`参考图 ≤ ${caps.max_reference_images} 张`)
-  if (caps.max_reference_audios !== undefined) out.push(`音色样本 ≤ ${caps.max_reference_audios} 段`)
+  if (caps.max_reference_audios !== undefined) out.push(`试音 ≤ ${caps.max_reference_audios} 段`)
   if (caps.max_prompt_chars !== undefined) out.push(`提示词 ≤ ${caps.max_prompt_chars} 字`)
   return out
 }

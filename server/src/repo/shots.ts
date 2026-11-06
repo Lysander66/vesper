@@ -1,5 +1,3 @@
-/** shots、artifacts 两张表的读写。 */
-
 import type { Database } from 'bun:sqlite'
 
 import { NotFound, nowIso, parseJson } from './common'

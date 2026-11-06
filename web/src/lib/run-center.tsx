@@ -1,6 +1,6 @@
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { CALL_SECTION_LABEL, type CallSection, type Run, type RunEventPayload, type RunFeedEvent, type RunStatus } from '@vesper/shared'
+import { CALL_SECTION_LABEL, RUN_STATUS_LABEL, type CallSection, type Run, type RunEventPayload, type RunFeedEvent, type RunStatus } from '@vesper/shared'
 import { toast } from 'sonner'
 import { api } from './api'
 import { purposeLabel, taskLabel } from './records'
@@ -70,13 +70,13 @@ export function RunCenterProvider({ children }: { children: ReactNode }) {
       refreshGenerated(queryClient)
       if (finished === 'succeeded') toast.success('任务完成', { description: noteOf(event.payload) })
       else {
-        const title = `任务${finished === 'cancelled' ? '已取消' : '失败'}`
+        const title = `任务${RUN_STATUS_LABEL[finished]}`
         const reason = errorOf(event.payload)
         toast.error(reason ? `${title}：${reason}` : title)
       }
     }
 
-    // 不用浏览器的自动重连：它会把已结束的 run 反复拉起。断线后隔一会儿按服务端状态对账。
+    // 不用浏览器的自动重连：它会反复重新订阅已结束的 run。断线后稍等，再按服务端状态核对。
     next.onerror = () => {
       next.close()
       if (source.current !== next) return
@@ -128,12 +128,12 @@ export function RunCenterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const feed = new EventSource('/api/runs/feed')
     let opened = false
-    // 每次连上（含断线重连）都查一遍进行中的任务，刷新页面或断线期间开始的任务靠这一步接回。
+    // 每次连上（含断线重连）都查询进行中的任务，刷新页面或断线期间开始的任务靠这一步重新订阅。
     feed.onopen = () => {
       api
         .activeRuns()
         .then((active) => active.forEach((run) => watch(run.id)))
-        .catch(() => toast.error('连不上服务端'))
+        .catch(() => toast.error('无法连接服务端'))
       if (opened) refreshGenerated(queryClient)
       opened = true
     }
@@ -241,6 +241,6 @@ function formatEvent(payload: RunEventPayload | null): Omit<RunLine, 'seq'> | nu
         text: payload.error ? `失败：${payload.error}` : '完成',
       }
     case 'finished':
-      return { level: payload.error ? 'error' : 'info', text: payload.error ? `结束：${payload.error}` : '结束' }
+      return { level: payload.error ? 'error' : 'info', text: payload.error ? `${RUN_STATUS_LABEL[payload.status]}：${payload.error}` : '结束' }
   }
 }

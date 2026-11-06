@@ -78,7 +78,7 @@ export function ProjectSettings({ view }: { view: ProjectView }) {
         </div>
         <div className={FIELD}>
           <Label className='text-xs'>画幅</Label>
-          {/* 一个开关同时管图像与视频：分开配置时出现过方图首帧喂给竖屏视频模型。 */}
+          {/* 图像与视频共用一个画幅，首帧才能与视频画幅一致。 */}
           <Segmented
             value={aspect}
             options={ASPECTS}
@@ -100,7 +100,7 @@ export function ProjectSettings({ view }: { view: ProjectView }) {
           </div>
         </div>
         <div className={FIELD}>
-          <Label className='text-xs'>音轨</Label>
+          <Label className='text-xs'>声音来源</Label>
           <Segmented value={audio} options={AUDIO_MODES} onChange={setAudio} render={(option) => AUDIO_MODE_LABEL[option]} />
         </div>
         <div className={FIELD}>

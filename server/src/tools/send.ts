@@ -20,7 +20,7 @@ if (typeof request.method !== 'string' || typeof request.url !== 'string') {
   process.exit(2)
 }
 
-/** 记录里的凭证是打码形，用环境变量里的 key 算出同一打码形再替换回去。 */
+/** 记录里的凭证是脱敏后的值，用环境变量里的 key 按同样规则脱敏后再替换回去。 */
 function fillKey<T>(value: T, masked: string, key: string): T {
   if (typeof value === 'string') return value.split(masked).join(key) as T
   if (Array.isArray(value)) return value.map((item) => fillKey(item, masked, key)) as T
@@ -32,10 +32,10 @@ function fillKey<T>(value: T, masked: string, key: string): T {
 
 const key = process.env[DEFAULT_ENV_VAR] ?? ''
 const masked = key === '' ? '' : maskSecret(key)
-// 打码形只剩星号时没法换回去：正文里同样的星号会被一起替换。
+// 脱敏后只剩星号时没法换回去：正文里同样的星号会被一起替换。
 const fillable = masked.length > 4
-if (key === '') console.error(`没设 ${DEFAULT_ENV_VAR}，凭证还是打码值，多半回 401`)
-else if (!fillable) console.error(`${DEFAULT_ENV_VAR} 太短，打码后认不出记录里的凭证，按原样发出，多半回 401`)
+if (key === '') console.error(`没设 ${DEFAULT_ENV_VAR}，凭证还是脱敏后的值，多半回 401`)
+else if (!fillable) console.error(`${DEFAULT_ENV_VAR} 太短，脱敏后认不出记录里的凭证，按原样发出，多半回 401`)
 
 const outcome = await sendRequest(fillable ? fillKey(request, masked, key) : request, { timeoutMs: TIMEOUT_MS })
 if (outcome.error !== undefined && outcome.statusCode === undefined) {

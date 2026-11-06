@@ -6,7 +6,7 @@
     "title": "OpenAI Audio Speech API",
     "docs": "https://developers.openai.com/api/docs/guides/text-to-speech",
     "hints": { "base_url": "https://api.openai.com" },
-    "notes": "响应体就是音频本身，所以 submit 声明 response=binary，没有 poll 也没有 result。只放 gpt-4o-mini-tts 一款：tts-1 系不认 instructions，可用音色也更少，混在一起界面会放行必然报错的组合。"
+    "notes": "响应体就是音频本身，所以 submit 声明 response=binary，没有 poll 也没有 result。只放 gpt-4o-mini-tts 一个模型：tts-1 系不认 instructions，可用音色也更少，混在一起界面会放行必然报错的组合。"
   },
   "auth": {
     "headers": { "Authorization": "Bearer {{ api_key }}" }

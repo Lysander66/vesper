@@ -1,5 +1,3 @@
-/** projects、episodes 两张表的读写。 */
-
 import type { Database } from 'bun:sqlite'
 
 import type { Aspect, AudioMode, Beat, BeatsState, ContinuityMode, Review } from '@vesper/shared'
@@ -95,7 +93,7 @@ export function createProject(db: Database, input: CreateProjectInput): string {
 
 export function getProject(db: Database, id: string): ProjectRow {
   const row = findProject(db, id)
-  if (!row) throw new NotFound(`项目 ${id}`)
+  if (!row) throw new NotFound(`作品 ${id}`)
   return row
 }
 

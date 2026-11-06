@@ -6,7 +6,7 @@
     "title": "Grok 图像生成",
     "docs": "https://docs.x.ai/docs/guides/image-generations",
     "hints": { "base_url": "https://api.x.ai" },
-    "notes": "它不收 size，画幅与档位拆成 aspect_ratio 与 resolution 两个参数。"
+    "notes": "它不接受 size，画幅与档位拆成 aspect_ratio 与 resolution 两个参数。"
   },
   "auth": {
     "headers": { "Authorization": "Bearer {{ api_key }}" }

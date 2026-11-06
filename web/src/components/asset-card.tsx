@@ -86,7 +86,7 @@ export function AssetCard(props: CardProps) {
   const { category, asset, flash = false, expanded = false, onToggle } = props
   const flashRef = useFlash<HTMLDivElement>(flash)
   const locked = asset.state === 'locked'
-  // 列表接口不给路径与版本，单独拉取；key 与展开面板相同，点开直接用缓存。
+  // 列表接口不含路径与版本，需单独获取；与展开面板共用 key，展开时直接读缓存。
   const detail = useQuery({ queryKey: ['asset', asset.id], queryFn: () => api.asset(asset.id) })
   const toggleLock = useToggleLock(asset.id, locked)
   const applyToShots = useApplyToShots(asset.id)
@@ -325,7 +325,7 @@ function CostumeDialog({ baseId, baseName, open, onOpenChange }: { baseId: strin
       <DialogContent className='max-w-md'>
         <DialogTitle>{baseName} · 添加换装</DialogTitle>
         <div className='space-y-2'>
-          <Input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder='装扮名，如官服' />
+          <Input autoFocus value={name} onChange={(event) => setName(event.target.value)} placeholder='换装名，如官服' />
           <Textarea value={outfit} onChange={(event) => setOutfit(event.target.value)} rows={3} placeholder='这一身的款式与颜色，只写穿戴在身上的' />
           <p className='text-2xs text-muted-foreground'>
             脸、发型与声音沿用{baseName}。全身图以{baseName}的全身图为参考生成。
@@ -499,7 +499,7 @@ export function AssetPanel({ assetId, name, onClose }: { assetId: string; name: 
   const asset = useQuery({ queryKey: ['asset', assetId], queryFn: () => api.asset(assetId) })
 
   useEffect(() => {
-    // 加载中的面板只有一行高，等字段铺开再滚，且只滚到刚好可见。
+    // 加载中的面板只有一行高，等内容加载完再滚动。
     if (asset.data === undefined) return
     ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
   }, [asset.data])

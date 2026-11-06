@@ -1,5 +1,3 @@
-/** 作品：创建、设置与删除。 */
-
 import type { Database } from 'bun:sqlite'
 
 import { ASPECTS, AUDIO_MODES, CONTINUITY_MODES, type StyleSuggestionView } from '@vesper/shared'

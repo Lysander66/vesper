@@ -46,7 +46,6 @@ export function EpisodeActions({ view }: { view: EpisodeView }) {
 function ProduceEpisodeButton({ view, params, primary, onConfirm, busy }: { view: EpisodeView; params: LaunchParamsState; primary: boolean; onConfirm: () => void; busy: boolean }) {
   const [open, setOpen] = useState(false)
   const shots = view.shots.length
-  // 原生音轨时台词随视频生成，不单独配音；参考图模式的镜头不生成首帧。
   const voices = params.audio === 'native' ? 0 : view.shots.filter((shot) => shot.utterances.length > 0).length
   const frames = view.shots.filter((shot) => shot.clip_source === 'first_frame').length
   const counts = { first_frame: frames, clip: shots, voice: voices }

@@ -1,5 +1,3 @@
-/** 数据目录的占用统计。 */
-
 import { readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 

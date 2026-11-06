@@ -1,4 +1,4 @@
-/** 说话人留空即无名旁白，下游据此挑音色。 */
+/** 说话人留空即无名旁白，配音时据此选择音色。 */
 import type { Utterance } from '@vesper/shared'
 import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'

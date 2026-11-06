@@ -1,4 +1,4 @@
-/** 端点定义渲染成请求。记录、导出与实发都经过这里。 */
+/** 端点定义渲染成请求。记录、导出与实际发送都经过这里。 */
 
 import { isAssetRef, type AssetRef } from './asset'
 import { DROP, isTruthy, lookup, renderValue, type Context, type EnumMaps } from './template'

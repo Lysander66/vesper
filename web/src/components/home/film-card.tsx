@@ -101,7 +101,7 @@ function flagOf(project: HomeProject): { text: string; tone: 'stale' | 'plain' }
 
 function sizeLabel(project: HomeProject): string {
   if (project.episodes === 0) return '待分集'
-  if (project.shots === 0) return `${project.episodes} 集 · 未拆分镜`
+  if (project.shots === 0) return `${project.episodes} 集 · 待拆分镜`
   return `${project.episodes} 集 · ${project.shots} 镜`
 }
 

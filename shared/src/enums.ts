@@ -1,5 +1,3 @@
-/** 前后端共用的枚举与中文名。 */
-
 /** 作品画幅，图像与视频都按它出。 */
 export const ASPECTS = ['16:9', '9:16'] as const
 /** 1:1 只用于设定图，不供作品选择。 */
@@ -11,7 +9,7 @@ export const ASPECT_LABEL: Readonly<Record<Aspect, string>> = {
   '1:1': '方图',
 }
 
-/** 声音来源：单独配音或视频模型自带音轨，按作品设置。 */
+/** 声音来源：单独配音或视频自带声音，按作品设置。 */
 export const AUDIO_MODES = ['separate', 'native'] as const
 export type AudioMode = (typeof AUDIO_MODES)[number]
 
@@ -167,7 +165,7 @@ export const LOOKS_BY_TIER: Readonly<Record<CastTier, readonly AssetFileRole[]>>
   support: ['full_body', 'portrait'],
 }
 
-/** 一件资产的全部设定图位。配角也列满五张，没补的仍可单独出。 */
+/** 一件资产的全部设定图类型。配角也列满五张，没补的仍可单独出。 */
 export const LOOKS_BY_CATEGORY: Readonly<Record<AssetCategory, readonly AssetFileRole[]>> = {
   character: LOOKS_BY_TIER.lead,
   scene: ['establishing'],

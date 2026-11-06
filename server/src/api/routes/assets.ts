@@ -1,5 +1,3 @@
-/** 角色 / 场景 / 道具的提取、校对、设定图与资产锁定。 */
-
 import type { Database } from 'bun:sqlite'
 
 import { BadRequest, body, json, optionalBody, z, type Register } from '../http'
